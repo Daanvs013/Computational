@@ -1,6 +1,13 @@
 /*
  Group 21
  Daan van Turnhout 2051976
+
+ JOINS:
+ inner join: returns entries with matching values in both tables
+ left join: returns all entries from left table, and the matched entries from right table
+ right join: returns all entries from right table, and the matched entries from left table
+ full join: returns all entries when there is a match in either left or right table
+
 */
 
 
@@ -32,7 +39,13 @@ where empsalary < 25000;
 drop table #turnhout;
 
 --2a
-
+select items.itemname,xdept.deptfloor,items.itemcolor
+from xitem as items
+inner join xsale on xsale.itemname = items.itemname --join sales and items
+inner join xdept on xdept.deptname = xsale.deptname -- join department and sales
+where items.itemcolor = 'Brown' -- check color
+and xdept.deptfloor = 1 --check floor = 1
+group by items.itemname,xdept.deptfloor,items.itemcolor; -- group by to only show unique results
 
 --2b
 select distinct * 
@@ -62,6 +75,52 @@ from xdept as departments
 where departments.deptname not in (select sales.deptname
 								   from xsale as sales
 								   where sales.itemname like '%compass%');
+
+--4
+select xdept.deptname,xitem.itemname
+from xdept
+inner join xemp on xemp.empno = xdept.empno -- join tables on relationship between FK and PK
+inner join xsale on xsale.deptname = xdept.deptname
+inner join xitem on xitem.itemname = xsale.itemname
+inner join xdel on xdel.deptname = xdept.deptname and xdel.itemname = xitem.itemname
+inner join xspl on xdel.splno = xspl.splno
+where xdept.deptname = 'Marketing' -- check department name
+and xitem.itemname like '%compass%' -- check itemname
+group by xdept.deptname,xitem.itemname; -- group by to show unique results
+-- no results because marketing department is in Q3 table
+
+
+--5a
+select avg(employee.empsalary) as avg_salary, 1 as id
+into #avg_marketing_table
+from xemp as employee
+where employee.deptname = 'Marketing';
+
+--5b
+select avg(employee.empsalary) as avg_salary, 1 as id
+into #avg_purchasing_table
+from xemp as employee
+where employee.deptname = 'Purchasing';
+
+--5cd
+select abs(p.avg_salary - m.avg_salary) as dif_salary
+into #dif_salary_table
+from #avg_marketing_table as m
+join #avg_purchasing_table as p on p.id = m.id;
+
+select *
+from #dif_salary_table;
+
+--5e
+drop table #avg_marketing_table;
+drop table #avg_purchasing_table;
+drop table #dif_salary_table;
+
+--6a
+select employee.empfname
+from xemp as employee
+where ;
+
 
 ----------------
 select  *
