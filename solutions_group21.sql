@@ -8,12 +8,19 @@
  right join: returns all entries from right table, and the matched entries from left table
  full join: returns all entries when there is a match in either left or right table
 
+ Temp table is called #turnhout, because #temp is already in use
+
+ NOG MAKEN : OPDRACHT 13,15b,16b,18c
+
+ VRAGEN: 14, wat bedoelen ze met 2 queries, vraag 17
+
 */
 
 
 ------- Question 2a -------
 
 -- 1a
+drop table if exists #turnhout
 select *
 into #turnhout -- insert into temp table
 from xemp as employee
@@ -91,18 +98,21 @@ group by xdept.deptname,xitem.itemname; -- group by to show unique results
 
 
 --5a
+drop table if exists #avg_marketing_table
 select avg(employee.empsalary) as avg_salary, 1 as id
 into #avg_marketing_table
 from xemp as employee
 where employee.deptname = 'Marketing';
 
 --5b
+drop table if exists #avg_purchasing_table
 select avg(employee.empsalary) as avg_salary, 1 as id
 into #avg_purchasing_table
 from xemp as employee
 where employee.deptname = 'Purchasing';
 
 --5cd
+drop table if exists #dif_salary_table
 select abs(p.avg_salary - m.avg_salary) as dif_salary
 into #dif_salary_table
 from #avg_marketing_table as m
@@ -119,21 +129,234 @@ drop table #dif_salary_table;
 --6a
 select employee.empfname
 from xemp as employee
-where ;
+where employee.bossno = 0;
+
+--6b
+select employee.empfname
+from xemp as employee
+where employee.bossno = 3
+order by employee.empfname asc;
+
+--6c
+select employee.empfname,employee.deptname, boss.empfname as boss, boss.deptname as boss_deptname
+from xemp as employee
+inner join xemp as boss on employee.bossno = boss.empno --join table with itself to obtain the boss
+where boss.deptname != employee.deptname; --check if same deptartment
+
+--6d
+select employee.empno,employee.empfname,employee.empsalary, boss.empfname as boss, boss.empsalary as boss_salary, abs(employee.empsalary-boss.empsalary) as salary_dif
+from xemp as employee
+inner join xemp as boss on employee.bossno = boss.empno --join table with itself to obtain the boss
+where employee.empsalary > boss.empsalary;
+
+--6e
+select employee.empfname,employee.empsalary,boss.empfname as boss_name ,employee.empsalary, employee.deptname
+from xemp as employee
+inner join xemp as boss on employee.bossno = boss.empno --join table with itself to obtain the boss
+where employee.deptname = 'Accounting' --check department
+and employee.empsalary > 20000; -- check salary
+
+--7
+select supplier.splname, count(delivery.itemname) as total
+from xdel as delivery
+inner join xspl as supplier on supplier.splno = delivery.splno
+group by supplier.splname
+having count(delivery.itemname)>=5
+order by total desc;
+
+--8
+select department.deptname,sum(sales.saleqty) as total
+from xdept as department
+inner join xsale as sales on sales.deptname = department.deptname
+where department.deptfloor = 1 or department.deptfloor = 2
+group by sales.itemname,department.deptname
+having sum(sales.saleqty) >= 5;
+
+--9
+drop table if exists #turnhout
+select boss.empno,boss.empfname,count(employee.bossno) as direct_employees
+into #turnhout
+from xemp as boss
+left join xemp as employee on employee.bossno = boss.empno
+group by boss.empfname,boss.empno;
+
+--9a
+select *
+from #turnhout;
+
+--9b
+select min(employee.direct_employees) as min_directed_employees --more than 1 manager with value 1???
+from #turnhout as employee
+where employee.direct_employees > 0;
+drop table #turnhout;
+
+--10a
+drop table if exists #turnhout
+select *
+into #turnhout
+from xemp as employee
+where employee.empsalary > (select max(a.empsalary) as max_salary
+							from xemp as a
+							where a.deptname = 'Clothes');
+--10b
+drop table if exists #turnhout_copy
+select *, rank() over(order by empsalary desc) salary_rank
+into #turnhout_copy
+from #turnhout;
+
+--10c
+select top 3 empsalary
+from #turnhout_copy;
+
+--10d
+drop table #turnhout;
+drop table #turnhout_copy;
+
+--11a
+select department.deptname
+from xdept as department
+where (select avg(employee.empsalary) as avg_salary -- find the avg salary of the department
+	   from xemp as employee
+	   where department.deptname = employee.deptname) > 10000 -- check avg salary 
+and department.deptname in (select sales.deptname -- check if the department sells compass or elephant stick
+							from xsale as sales
+							where sales.itemname like '%compass%' or sales.itemname like '%elephant polo stick%');
+
+--11b
+select department.deptname
+from xdept as department
+where (select avg(employee.empsalary) as avg_salary -- find the avg salary of the department
+	   from xemp as employee
+	   where department.deptname = employee.deptname) > 10000 -- check avg salary 
+intersect
+select sales.deptname
+from xsale as sales
+where sales.itemname like '%compass%' or sales.itemname like '%elephant polo stick%';
+
+--12a
+select supplier.splname
+from xspl as supplier
+where supplier.splno not in (select delivery.splno
+							 from xdel as delivery
+							 where delivery.itemname = 'stetson');
+--12b
+select supplier.splname
+from xspl as supplier
+inner join xdel as delivery on delivery.splno = supplier.splno
+where supplier.splno not in (select delivery.splno
+							 from xdel as delivery
+							 where delivery.itemname = 'stetson')
+group by supplier.splname;
+
+--13
 
 
-----------------
+--14abc
+drop table if exists #result -- redundanct statement, can be removed, remove before uploading
+select 'highest_avg_salary' as type,employee.deptname as department --one single query with subqueriesssss
+into #result
+from xemp as employee
+group by employee.deptname
+having avg(employee.empsalary) = (select max(avg_salary_dept.avg) as max_avg_salary_dept -- subquery to calculate the maximum of avg_salary_dept
+								  from (select avg(employee.empsalary) as avg --subquery to calculate all average salaries from each department
+										from xemp as employee
+										group by employee.deptname) as avg_salary_dept) -- call subquery as avg_salary_dept
+union
+select 'lowest_avg_salary'as type,employee.deptname as department
+from xemp as employee
+group by employee.deptname
+having avg(employee.empsalary) = (select min(avg_salary_dept.avg) as min_avg_salary_dept -- subquery to calculate the minimum of avg_salary_dept
+								  from (select avg(employee.empsalary) as avg --subquery to calculate all average salaries from each department
+										from xemp as employee
+										group by employee.deptname) as avg_salary_dept); -- call subquery as avg_salary_dept
+--14d
+select * from #result; --redundant statement, can be removed, remove before uploading
+drop table #result;
+
+--15a
+select sales.itemname
+from xsale as sales
+where sales.deptname = 'Clothes'
+union
+select delivery.itemname
+from xdel as delivery
+where delivery.splno in (select supplier.splno
+						 from xspl as supplier
+						 where supplier.splname = 'Nepalese Corp.')
+order by sales.itemname asc;
+
+--15b
+
+
+--16a
+select delivery.itemname
+from xdel as delivery
+where delivery.splno in (select supplier.splno
+						 from xspl as supplier
+						 where supplier.splname = 'Nepalese Corp.')
+except
+select sales.itemname
+from xsale as sales
+where sales.deptname = 'Clothes'
+order by delivery.itemname asc;
+
+--16b
+
+
+--17
+select sales.deptname
+from xsale as sales
+inner join xitem as items on items.itemname = sales.itemname
+inner join xdel as delivery on delivery.itemname = items.itemname
+where (items.itemtype = 'E' or items.itemtype = 'F')
+and (sales.deptname = 'Navigation')
+and (delivery.splno = 102)
+
+--18a
+drop table if exists #turnhout_cartesian_temp
+select sales.saleno,sales.saleqty,sales.itemname as sale_itemname,sales.deptname, items.itemname as item_itemname,items.itemtype,items.itemcolor
+into #turnhout_cartesian_temp
+from xsale as sales ,xitem as items
+
+--18b
+drop table if exists #turnhout_unique_records
+select distinct *
+into #turnhout_unique_records
+from #turnhout_cartesian_temp
+
+--18c
+ 
+
+
+--18d
+drop table #turnhout_cartesian_temp
+drop table #turnhout_unique_records
+
+--19
+select * 
+from xsale as sales
+except 
+select *
+from xsale_copy as sales_copy
+
+------- Question 2b -------
+
+--20
+
+---------------------------
+
+
 select  *
 from xemp
 
-select  *
+select *
 from xdel
 
 select  *
-from xitem
+from xsale
 
 select  *
-from xsale
+from xitem
 
 select  *
 from xspl
