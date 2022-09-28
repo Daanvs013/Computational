@@ -10,9 +10,7 @@
 
  Temp table is called #turnhout, because #temp is already in use
 
- NOG MAKEN : OPDRACHT 13,15b,16b,18c
-
- VRAGEN: 14, wat bedoelen ze met 2 queries, vraag 17
+ NOG MAKEN : OPDRACHT 13,15b,16b,17,18c
 
 */
 
@@ -310,38 +308,73 @@ inner join xitem as items on items.itemname = sales.itemname
 inner join xdel as delivery on delivery.itemname = items.itemname
 where (items.itemtype = 'E' or items.itemtype = 'F')
 and (sales.deptname = 'Navigation')
-and (delivery.splno = 102)
+and (delivery.splno = 102);
 
 --18a
 drop table if exists #turnhout_cartesian_temp
 select sales.saleno,sales.saleqty,sales.itemname as sale_itemname,sales.deptname, items.itemname as item_itemname,items.itemtype,items.itemcolor
 into #turnhout_cartesian_temp
-from xsale as sales ,xitem as items
+from xsale as sales ,xitem as items;
 
 --18b
 drop table if exists #turnhout_unique_records
 select distinct *
 into #turnhout_unique_records
-from #turnhout_cartesian_temp
+from #turnhout_cartesian_temp;
 
 --18c
  
 
 
 --18d
-drop table #turnhout_cartesian_temp
-drop table #turnhout_unique_records
+drop table #turnhout_cartesian_temp;
+drop table #turnhout_unique_records;
 
 --19
 select * 
 from xsale as sales
 except 
 select *
-from xsale_copy as sales_copy
+from xsale_copy as sales_copy;
 
 ------- Question 2b -------
 
---20
+--20a
+select cluster_id, count(cluster_id) as n_pubs
+from Patstat_golden_set
+group by cluster_id
+order by n_pubs desc;
+
+--20b
+select cluster_id, count(cluster_id) as n_pubs, 100*convert(float,count(cluster_id))/total as probability
+from Patstat_golden_set, (select count(*) as total from Patstat_golden_set) as total
+group by cluster_id, total
+order by n_pubs desc;
+
+--20c
+drop table if exists #turnhout_result
+select cluster_id, count(cluster_id) as n_pubs, 100*convert(float,count(cluster_id))/total as probability
+into #turnhout_result
+from Patstat_golden_set, (select count(*) as total from Patstat_golden_set) as total
+group by cluster_id, total
+order by n_pubs desc;
+
+--20d
+select cluster_id, count(cluster_id) as n_pubs, 100*convert(float,count(cluster_id))/total as probability, (count(cluster_id)-mean)/variance as normalized_n_pubs
+from Patstat_golden_set, (select count(*) as total 
+						  from Patstat_golden_set) as total, (select avg(n_pubs) as mean
+															  from #turnhout_result) as mean, (select stdev(n_pubs) as variance
+																							   from #turnhout_result) as variance
+group by cluster_id, total, mean, variance
+order by n_pubs desc;
+
+select *
+from #turnhout_result
+
+--20e
+drop table #turnhout_result
+
+
 
 ---------------------------
 
