@@ -8,9 +8,9 @@
  right join: returns all entries from right table, and the matched entries from left table
  full join: returns all entries when there is a match in either left or right table
 
- Temp table is called #turnhout, because #temp is already in use
+ NOG MAKEN : OPDRACHT 15b,16b,17,18c
 
- NOG MAKEN : OPDRACHT 13,15b,16b,17,18c
+ VRAGEN: 22
 
 */
 
@@ -247,7 +247,24 @@ where supplier.splno not in (select delivery.splno
 group by supplier.splname;
 
 --13
+create function dbo.turnhout_getFirstWord 
+(
+	@word varchar(248)
+)
+returns varchar(248)
+begin
+declare @output varchar(248)
+	if (charindex(' ',ltrim(@word)) = 0) --meaning that there are no spaces in the string
+		select @output = ltrim(@word)
+	else -- there are spaces in the string
+		select @output = substring(ltrim(@word),1,charindex(' ',ltrim(@word)))
+	return @output
+end;
 
+select *, dbo.turnhout_getFirstWord(items.itemname) as itemname_firstword
+from xitem as items;
+
+drop function dbo.turnhout_getFirstWord;
 
 --14abc
 drop table if exists #result -- redundanct statement, can be removed, remove before uploading
@@ -374,7 +391,70 @@ from #turnhout_result
 --20e
 drop table #turnhout_result
 
+--21
+drop function if exists dbo.turnhout_funcDeleteMultipleSpaces
+create function dbo.turnhout_funcDeleteMultipleSpaces
+(
+	@inputstring nvarchar(1024)
+)
+returns nvarchar(1024)
+begin
+	set @inputstring = ltrim(@inputstring) --remove all spaces before the first word
+	while charindex('  ', @inputstring) >0 --check if there exists a double space | returns 0 as index if there are no characters that match the input, in this case a double space
+	begin
+		set @inputstring = replace(@inputstring,'  ',' ') --if exists replace double space with single space
+		--stop loop if there does not exists a double space in the string, which means that all whitespaces are replaced with a single space, or that there was no double or larger space in the inputstring
+	end
+	return @inputstring
+end;
 
+select dbo.turnhout_funcDeleteMultipleSpaces('   test       test       test     test test   test') as 'test';
+select *, dbo.turnhout_funcDeleteMultipleSpaces(npl_biblio) as clean_npl_biblio
+from Patstat;
+
+drop function dbo.turnhout_funcDeleteMultipleSpaces;
+
+--22
+create function dbo.turnhout_cleanIt
+(	
+	@inputstring nvarchar(1024), @invalidcharacters  nvarchar(1024)
+)
+returns nvarchar(1024)
+begin
+declare @pos int
+	-- remove all characters that are not wanted with a pattern index: returns postition in the string of a character that matches the given pattern | returns 0 if there are no more characters that matches the pattern
+	set @pos = patindex(@invalidcharacters, @inputstring) -- get position of the first character that matches the pattern
+	while @pos > 0 --check if position is larger than 0
+	begin
+		set @inputstring = concat(substring(@inputstring,1,@pos -1),substring(@inputstring,@pos +1,len(@inputstring))) --delete the character from string, based on the position where the character that needs to be deleted is
+		set @pos = patindex(@invalidcharacters, @inputstring) -- update position to the next character that matches the pattern in string
+	end
+	return @inputstring
+end;
+
+--test cases
+select dbo.turnhout_cleanIt('3567576Q7XDEWC6A871','%[^1-3A-D]%'); --would return '3DCA1'
+select dbo.turnhout_cleanIt('3567576Q7XDEWC6A871','%[A-Z]%'); --would return '356757676871'
+select dbo.turnhout_cleanIt('3567576Q7XDEWC6A871','%[0-9]%'); --would return 'QXDEWCA'
+select dbo.turnhout_cleanIt ('64@#7*&*^6^$%Q7C6A871','%[^0-9A-Z]%'); --would return '6476Q7C6A871'
+select dbo.turnhout_cleanIt('64@#7*&*^6^$%Q7C6A871','%[0-9A-Z]%'); --would return '@#*&*^^$%'
+select dbo.turnhout_cleanIt('the fox ran into the forest following other foxes!','% %'); --would return 'thefoxranintotheforestfollowingotherfoxes!' [note: remove single space]
+select dbo.turnhout_cleanIt('the fox ran into the forest following other foxes!','%  %'); --would return 'the fox ran into the forest following other foxes!' [note: remove doubles spaces
+
+select *, dbo.turnhout_cleanIt(npl_biblio,'%[,.]%') as clean_npl_biblio
+from Patstat;
+
+drop function dbo.turnhout_cleanIt;
+
+--23
+create procedure turnhout
+(
+	@unclustered_input table
+)
+
+select top 1000 *
+from patstat_golden_set as patstat
+where cluster_id = 100
 
 ---------------------------
 
