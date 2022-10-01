@@ -8,9 +8,7 @@
  right join: returns all entries from right table, and the matched entries from left table
  full join: returns all entries when there is a match in either left or right table
 
- NOG MAKEN : OPDRACHT 15b,16b,17,18c
-
- VRAGEN: 22
+ NOG MAKEN : OPDRACHT 16b,18c
 
 */
 
@@ -295,12 +293,16 @@ where sales.deptname = 'Clothes'
 union
 select delivery.itemname
 from xdel as delivery
-where delivery.splno in (select supplier.splno
-						 from xspl as supplier
-						 where supplier.splname = 'Nepalese Corp.')
+where delivery.splno = '102'
 order by sales.itemname asc;
 
 --15b
+select delivery.itemname
+from xdel as delivery
+inner join xsale as sales on delivery.deptname = sales.deptname
+where delivery.splno = '102'
+or (sales.deptname = 'Clothes' and sales.itemname = delivery.itemname)
+group by delivery.itemname;
 
 
 --16a
@@ -445,34 +447,4 @@ select *, dbo.turnhout_cleanIt(npl_biblio,'%[,.]%') as clean_npl_biblio
 from Patstat;
 
 drop function dbo.turnhout_cleanIt;
-
---23
-create procedure turnhout
-(
-	@unclustered_input table
-)
-
-select top 1000 *
-from patstat_golden_set as patstat
-where cluster_id = 100
-
 ---------------------------
-
-
-select  *
-from xemp
-
-select *
-from xdel
-
-select  *
-from xsale
-
-select  *
-from xitem
-
-select  *
-from xspl
-
-select  *
-from xdept
