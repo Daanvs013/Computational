@@ -36,7 +36,6 @@ declare @pos int
 	return @inputstring
 end;
 
-
 create function dbo.turnhout_getAuthor 
 (
 	--allmost all name variants have the author name in the front of the string, so we will assume that this is the case for all
@@ -45,11 +44,28 @@ create function dbo.turnhout_getAuthor
 returns nvarchar(1024)
 begin
 declare @pos int
-	set @pos = patindex('%et al%:%,%',@inputstring)
-	if (@pos < 1)
-		set @inputstring = substring(@inputstring,1,@pos)
+	--assume author ends with et al
+	set @pos = patindex('%et al%',@inputstring)
+	if (@pos < 1) --no pattern found
+	begin
+		--check if author name ends with :
+		--assume that author name is no longer than 40 characters
+		set @pos = charindex(':',substring(@inputstring,1,40))
+		if (@pos < 1) -- no : found
+		begin
+			--check if author name ends with ,
+			--assume that author name is no longer than 40 characters
+			set @pos = charindex(',',substring(@inputstring,1,40))
+			if (@pos <1)
+				set @inputstring = @inputstring
+			else
+				set @inputstring = substring(@inputstring,1,@pos-1)
+		end
+		else
+			set @inputstring = substring(@inputstring,1,@pos-1)
+	end
 	else
-		set @inputstring = substring(@inputstring,1,@pos-1)
+		set @inputstring = substring(@inputstring,1,@pos+4)
 	return Ltrim(Rtrim(@inputstring))
 end;
 
@@ -92,7 +108,22 @@ begin
 declare @pos int
 	set @pos = patindex('%pages%',@inputstring)
 	if (@pos < 1)
-		set @inputstring = NULL
+	begin
+		set @pos = patindex('%bladzijde%',@inputstring)
+		if (@pos <1)
+			set @inputstring = null
+		else
+		begin
+			-- we dont know how many characters the pages numbers are, for example: 10-23 is different length than 1029-1129
+			-- so split string again at the whitespace
+			set @inputstring = Ltrim(substring(@inputstring,@pos+9,len(@inputstring)))
+			set @pos = charindex(' ',@inputstring)
+			if (@pos <1)
+				set @inputstring = null
+			else
+				set @inputstring = substring(@inputstring,1,@pos-1)
+		end
+	end
 	else
 	begin
 		-- we dont know how many characters the pages numbers are, for example: 10-23 is different length than 1029-1129
@@ -130,7 +161,6 @@ declare @pos int
 	return Ltrim(Rtrim(@inputstring))
 end;
 
-
 create function dbo.turnhout_getTitle
 (
 	@inputstring nvarchar(1024)
@@ -155,7 +185,7 @@ declare @pos int
 	else
 	begin
 		--no et al, but likely that author ends with comma or dot
-		set @pos = patindex('%,.%', @inputstring)
+		set @pos = patindex('%[.,]%', @inputstring)
 		if(@pos >1)
 		begin
 			set @inputstring = Ltrim(substring(@inputstring,@pos+2,len(@inputstring)))
@@ -166,6 +196,48 @@ declare @pos int
 			else
 				set @inputstring = NULL
 		end
+	end
+	return Ltrim(Rtrim(@inputstring))
+end;
+
+create function dbo.turnhout_getYear
+(
+	@inputstring nvarchar(1024)
+)
+returns nvarchar(1024)
+begin
+declare @pos int
+	set @inputstring = Ltrim(Rtrim(@inputstring)) --trim string
+	set @pos = patindex('%[1-2][0-9][0-9][0-9]%',@inputstring)  --might also be that this function returns the page number if the page numbers are 4 digits long. 
+	if (@pos <1)
+		set @inputstring = null
+	else
+		set @inputstring = Rtrim(substring(@inputstring,@pos,4))
+	return @inputstring
+end;
+
+create function dbo.turnhout_getMonth
+(
+	@inputstring nvarchar(1024)
+)
+returns nvarchar(1024)
+begin
+declare @pos int
+	set @inputstring = lower(Ltrim(Rtrim(@inputstring)))
+	set @inputstring = case --assume english month names
+		when @inputstring like '%january%' then 'january'
+		when @inputstring like '%febuary%' then 'febuary'
+		when @inputstring like '%march%' then 'march'
+		when @inputstring like '%april%' then 'april'
+		when @inputstring like '%may%' then 'may'
+		when @inputstring like '%june%' then 'june'
+		when @inputstring like '%july%' then 'july'
+		when @inputstring like '%august%' then 'august'
+		when @inputstring like '%september%' then 'september'
+		when @inputstring like '%november%' then 'november'
+		when @inputstring like '%december%' then 'december'
+		when @inputstring like '%october%' then 'october'
+		else null
 	end
 	return Ltrim(Rtrim(@inputstring))
 end;
@@ -183,7 +255,6 @@ begin
 		Author varchar,
 		Title varchar,
 		Volume int,
-		Issue int,
 		Pages varchar,
 		Publication_year int,
 		Publication_month varchar,
@@ -207,9 +278,11 @@ begin
 		dbo.turnhout_getXP(npl_biblio) as XP_number,
 		dbo.turnhout_getPages(npl_biblio) as pages,
 		dbo.turnhout_getVolume(npl_biblio) as volume,
-		dbo.turnhout_getIssue(npl_biblio) as issue
+		dbo.turnhout_getYear(npl_biblio) as publication_year,
+		dbo.turnhout_getMonth(npl_biblio) as publication_month
 	--into #turnhout_metadata
 	from #turnhout_temp
+	order by publication_month desc
 
 	select *
 	from patstat
@@ -229,3 +302,6 @@ drop function dbo.turnhout_getXP;
 drop function dbo.turnhout_getPages;
 drop function dbo.turnhout_getVolume;
 drop function dbo.turnhout_getTitle;
+drop function dbo.turnhout_getYear;
+drop function dbo.turnhout_getMonth;
+
