@@ -1,6 +1,6 @@
 ---		Question 23 GROUP 21 
----		first run all helper function
----		then run the procedure -> exec procedure -> drop all function and procedures
+---		first check dataset in the procedure function
+---		then run the entire file in batches going from top to bottom, or just run the entire file in one go
 
 -- helper functions                    ------------------
 create function dbo.turnhout_cleanIt
@@ -19,6 +19,7 @@ declare @pos int
 	end
 	return @inputstring
 end;
+go
 
 create function dbo.turnhout_replace
 (
@@ -35,6 +36,7 @@ declare @pos int
 	end
 	return @inputstring
 end;
+go
 
 create function dbo.turnhout_getAuthor 
 (
@@ -68,6 +70,7 @@ declare @pos int
 		set @inputstring = substring(@inputstring,1,@pos+4)
 	return Ltrim(Rtrim(@inputstring))
 end;
+go
 
 create function dbo.turnhout_getISSN
 (
@@ -83,6 +86,7 @@ declare @pos int
 		set @inputstring = substring(@inputstring,@pos+5,10)
 	return Ltrim(Rtrim(@inputstring))
 end;
+go
 
 create function dbo.turnhout_getXP
 (
@@ -98,6 +102,7 @@ declare @pos int
 		set @inputstring = substring(@inputstring,@pos,11)
 	return Ltrim(Rtrim(@inputstring))
 end;
+go
 
 create function dbo.turnhout_getPages
 (
@@ -109,6 +114,7 @@ declare @pos int
 	set @pos = patindex('%pages%',@inputstring)
 	if (@pos < 1)
 	begin
+		--check for NL translation
 		set @pos = patindex('%bladzijde%',@inputstring)
 		if (@pos <1)
 			set @inputstring = null
@@ -137,6 +143,7 @@ declare @pos int
 	end
 	return Ltrim(Rtrim(@inputstring))
 end;
+go
 
 create function dbo.turnhout_getVolume
 (
@@ -160,6 +167,7 @@ declare @pos int
 	end
 	return Ltrim(Rtrim(@inputstring))
 end;
+go
 
 create function dbo.turnhout_getTitle
 (
@@ -199,6 +207,7 @@ declare @pos int
 	end
 	return Ltrim(Rtrim(@inputstring))
 end;
+go
 
 create function dbo.turnhout_getYear
 (
@@ -215,6 +224,7 @@ declare @pos int
 		set @inputstring = Rtrim(substring(@inputstring,@pos,4))
 	return @inputstring
 end;
+go
 
 create function dbo.turnhout_getMonth
 (
@@ -226,21 +236,41 @@ declare @pos int
 	set @inputstring = lower(Ltrim(Rtrim(@inputstring)))
 	set @inputstring = case --assume english month names
 		when @inputstring like '%january%' then 'january'
+		when @inputstring like '%jan.%' then 'january'
 		when @inputstring like '%febuary%' then 'febuary'
+		when @inputstring like '%feb.%' then 'febuary'
 		when @inputstring like '%march%' then 'march'
+		when @inputstring like '%mar.%' then 'march'
 		when @inputstring like '%april%' then 'april'
 		when @inputstring like '%may%' then 'may'
 		when @inputstring like '%june%' then 'june'
 		when @inputstring like '%july%' then 'july'
 		when @inputstring like '%august%' then 'august'
 		when @inputstring like '%september%' then 'september'
+		when @inputstring like '%sept.%' then 'september'
 		when @inputstring like '%november%' then 'november'
+		when @inputstring like '%nov.%' then 'november'
 		when @inputstring like '%december%' then 'december'
+		when @inputstring like '%dec.%' then 'december'
 		when @inputstring like '%october%' then 'october'
+		when @inputstring like '%oct.%' then 'october'
 		else null
 	end
 	return Ltrim(Rtrim(@inputstring))
 end;
+go
+
+create function dbo.getScore
+(
+	@inputstring nvarchar(1024)
+)
+returns int
+begin
+declare @score int
+	set @score = 2
+	return @score
+end;
+go
 
 --------------------------------------------------------
 
@@ -248,29 +278,18 @@ end;
 create procedure turnhout
 as
 begin
-	--create helper table
-	drop table if exists #turnhout_metadata
-	create table #turnhout_metadata (
-		id int,
-		Author varchar,
-		Title varchar,
-		Volume int,
-		Pages varchar,
-		Publication_year int,
-		Publication_month varchar,
-		ISSN int,
-		ISBN int,
-		DOI int,
-		XP_number varchar
-	)
+declare @pos int
+declare @id int
+declare @str nvarchar(1024)
 
 	--preclean data
 	drop table if exists #turnhout_temp
-	select top(1000) npl_publn_id as id, dbo.turnhout_cleanIt(Ltrim(Rtrim(npl_biblio)),'%[.@#$%^&*/\<>+=-_]%') as npl_biblio
+	select top(1000) npl_publn_id as id, dbo.turnhout_cleanIt(Ltrim(Rtrim(npl_biblio)),'%[.@#$%^&*/\<>+=-_]%') as npl_biblio, null as cluster_id
 	into #turnhout_temp
-	from Patstat
+	from Patstat;
 
 	--extract metadata
+	drop table if exists #turnhout_metadata
 	select id,
 		dbo.turnhout_getAuthor(npl_biblio) as author,
 		dbo.turnhout_getTitle(npl_biblio) as title,
@@ -280,17 +299,49 @@ begin
 		dbo.turnhout_getVolume(npl_biblio) as volume,
 		dbo.turnhout_getYear(npl_biblio) as publication_year,
 		dbo.turnhout_getMonth(npl_biblio) as publication_month
-	--into #turnhout_metadata
-	from #turnhout_temp
-	order by publication_month desc
+	into #turnhout_metadata
+	from #turnhout_temp;
 
+	--display metadata table
 	select *
-	from patstat
+	from #turnhout_metadata;
+
+	--first iteration, add cluster_id 1 to a random row, we choose the first row
+	set @pos = 1;
+	update top(1) #turnhout_temp
+	set cluster_id = 1 --@pos
+
+	--while loop
+	-- structure:
+	--	1. select the first row that has a cluster_id equal to @pos, find matches (of rows that have null as cluster_id) based on rules and add the same cluster_id to these rows
+	--	2. after matching, increase @pos with 1 and add that cluster_id to a random row with a null as cluster_id
+	--  3. go back to first step
+	--  4 stop if all rows have a non null cluster_id
+	while ((select count(cluster_id) from #turnhout_temp where cluster_id = null)>0)
+	begin
+		--get rowid with cluster_id = @pos
+		set @id = (select top(1) id from #turnhout_temp where cluster_id = @pos)
+		--get corresponding row in the metadata table
+		set @str = (select top(1) * from #turnhout_metadata where id = @id)
+
+		--apply score function to all rows that have not received a cluster_id
+		select *,dbo.getScore(@str) as score
+		from #turnhout_temp
+		where cluster_id = null
+		break;
+	end
+
+
+	--drop all tables made in procedure
+	drop table if exists #turnhout_metadata
+	drop table if exists #turnhout_temp
 
 end;
+go
 
 --execute script
 exec turnhout
+go
 
 --drop all
 drop procedure turnhout;
@@ -304,4 +355,4 @@ drop function dbo.turnhout_getVolume;
 drop function dbo.turnhout_getTitle;
 drop function dbo.turnhout_getYear;
 drop function dbo.turnhout_getMonth;
-
+drop function dbo.getScore;
