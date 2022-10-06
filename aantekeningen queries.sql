@@ -6,6 +6,7 @@
 			   7 nog niet vergeleken
 			   8 controleren, interpretatie aangeven
 			   9a nog niet vergeleken, 9b comment maken
+			   10 klopt niet, ordering
 			   12b nog niet vergeleken
 			   14 nog niet vergeleken
 			   15 interpretatie, spnlo = 102 misschien anders
