@@ -2,14 +2,6 @@
  Group 21
  Daan van Turnhout 2051976
 
- JOINS:
- inner join: returns entries with matching values in both tables
- left join: returns all entries from left table, and the matched entries from right table
- right join: returns all entries from right table, and the matched entries from left table
- full join: returns all entries when there is a match in either left or right table
-
- NOG MAKEN : OPDRACHT 16b,18c
-
 */
 
 
@@ -318,6 +310,13 @@ where sales.deptname = 'Clothes'
 order by delivery.itemname asc;
 
 --16b
+select distinct itemname
+from xdel
+where splno = (select splno
+			   from xspl
+			   where splname = 'Nepalese Corp.') and itemname not in (select itemname
+																	  from xsale
+																	  where deptname = 'Clothes')
 
 
 --17
@@ -335,19 +334,24 @@ select sales.saleno,sales.saleqty,sales.itemname as sale_itemname,sales.deptname
 into #turnhout_cartesian_temp
 from xsale as sales ,xitem as items;
 
---18b
-drop table if exists #turnhout_unique_records
-select distinct *
-into #turnhout_unique_records
-from #turnhout_cartesian_temp;
+--Q18
+drop table if exists #cartesian_temp
+select sales.saleno,sales.saleqty,sales.itemname as sale_itemname,sales.deptname, items.itemname as item_itemname,items.itemtype,items.itemcolor
+into #cartesian_temp
+from xsale as sales ,xitem as items;
 
---18c
- 
+--Cartesian product so all records are unique
+drop table if exists #unique_records
+select *
+into #unique_records
+from #cartesian_temp
 
+-- As unique records has the same amount of rows as the cartesian product we know that there are no duplicates
+delete
+from #cartesian_temp
 
---18d
-drop table #turnhout_cartesian_temp;
-drop table #turnhout_unique_records;
+drop table #cartesian_temp
+drop table #unique_records
 
 --19
 select * 
