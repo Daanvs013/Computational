@@ -2,6 +2,8 @@
  Group 21
  Daan van Turnhout 2051976
 
+vragen geupdate op 6-10-2022: 2 aangepast, 4,6,16b,18 van nick gepakt, interpretatie gegeven bij 8,9,15,16,17
+
 */
 
 
@@ -39,7 +41,7 @@ from xitem as items
 inner join xsale on xsale.itemname = items.itemname --join sales and items
 inner join xdept on xdept.deptname = xsale.deptname -- join department and sales
 where items.itemcolor = 'Brown' -- check color
-and xdept.deptfloor = 1 --check floor = 1
+and xdept.deptfloor = 2 --check floor = 2
 group by items.itemname,xdept.deptfloor,items.itemcolor; -- group by to only show unique results
 
 --2b
@@ -71,18 +73,17 @@ where departments.deptname not in (select sales.deptname
 								   from xsale as sales
 								   where sales.itemname like '%compass%');
 
---4
-select xdept.deptname,xitem.itemname
-from xdept
-inner join xemp on xemp.empno = xdept.empno -- join tables on relationship between FK and PK
-inner join xsale on xsale.deptname = xdept.deptname
-inner join xitem on xitem.itemname = xsale.itemname
-inner join xdel on xdel.deptname = xdept.deptname and xdel.itemname = xitem.itemname
-inner join xspl on xdel.splno = xspl.splno
-where xdept.deptname = 'Marketing' -- check department name
-and xitem.itemname like '%compass%' -- check itemname
-group by xdept.deptname,xitem.itemname; -- group by to show unique results
--- no results because marketing department is in Q3 table
+-- Q4
+-- no results because Q3 implies that the department marketing has not sold (to a customer as a record in the xsale table) a compass.
+-- So this query should result in an empty table
+select distinct a.*, d.*
+from xemp as a
+inner join xdept as b on a.deptname = b.deptname
+inner join xsale as c on b.deptname = c.deptname
+inner join xitem as d on c.itemname = d.itemname
+inner join xdel as e on d.itemname = e.itemname
+inner join xspl as f on e.splno = f.splno
+where b.deptname = 'Marketing' and d.itemname = 'Compass';
 
 
 --5a
@@ -114,35 +115,35 @@ drop table #avg_marketing_table;
 drop table #avg_purchasing_table;
 drop table #dif_salary_table;
 
---6a
-select employee.empfname
-from xemp as employee
-where employee.bossno = 0;
+--Q6 
+select empsalary
+from xemp
+where empno = (select bossno
+			   from xemp
+			   where empno = (select bossno	
+							  from xemp
+							  where empfname ='Nancy'))
 
---6b
-select employee.empfname
-from xemp as employee
-where employee.bossno = 3
-order by employee.empfname asc;
+select empfname
+from xemp
+where bossno = (select empno
+			    from xemp
+				where empfname = 'Andrew')
+order by empfname
 
---6c
-select employee.empfname,employee.deptname, boss.empfname as boss, boss.deptname as boss_deptname
-from xemp as employee
-inner join xemp as boss on employee.bossno = boss.empno --join table with itself to obtain the boss
-where boss.deptname != employee.deptname; --check if same deptartment
+select a.empfname, a.deptname, b.empfname as bossname, b.deptname
+from xemp as a
+join xemp as b on a.bossno = b.empno
 
---6d
-select employee.empno,employee.empfname,employee.empsalary, boss.empfname as boss, boss.empsalary as boss_salary, abs(employee.empsalary-boss.empsalary) as salary_dif
-from xemp as employee
-inner join xemp as boss on employee.bossno = boss.empno --join table with itself to obtain the boss
-where employee.empsalary > boss.empsalary;
+select a.empno, a.empfname, (a.empsalary - b.empsalary) as salary_dif
+from xemp as a
+join xemp as b on a.bossno = b.empno
+where a.empsalary > b.empsalary
 
---6e
-select employee.empfname,employee.empsalary,boss.empfname as boss_name ,employee.empsalary, employee.deptname
-from xemp as employee
-inner join xemp as boss on employee.bossno = boss.empno --join table with itself to obtain the boss
-where employee.deptname = 'Accounting' --check department
-and employee.empsalary > 20000; -- check salary
+select a.empfname, a.empsalary, b.empfname as bossname
+from xemp as a
+join xemp as b on a.bossno = b.empno
+where a.deptname = 'Accounting' and a.empsalary > 20000
 
 --7
 select supplier.splname, count(delivery.itemname) as total
@@ -153,6 +154,7 @@ having count(delivery.itemname)>=5
 order by total desc;
 
 --8
+-- we interpreted 'that sell at least 5 items' as: the department has made at least 5 sales in the sales table
 select department.deptname,sum(sales.saleqty) as total
 from xdept as department
 inner join xsale as sales on sales.deptname = department.deptname
@@ -173,9 +175,15 @@ select *
 from #turnhout;
 
 --9b
-select min(employee.direct_employees) as min_directed_employees --more than 1 manager with value 1???
+--more than 1 manager with the lowest direct employees, so we will return all managers who have the lowest number of direct employees,
+--we also exclude all managers who have no direct employees, 
+--because we interpreted the question in this way.
+select employee.empfname,employee.direct_employees as manager_name 
 from #turnhout as employee
-where employee.direct_employees > 0;
+where employee.direct_employees > 0
+and employee.direct_employees = (select min(employee.direct_employees) as direct_employees
+								 from #turnhout as employee
+								 where employee.direct_employees >0)
 drop table #turnhout;
 
 --10a
@@ -188,7 +196,7 @@ where employee.empsalary > (select max(a.empsalary) as max_salary
 							where a.deptname = 'Clothes');
 --10b
 drop table if exists #turnhout_copy
-select *, rank() over(order by empsalary desc) salary_rank
+select *, rank() over(order by empsalary asc) salary_rank
 into #turnhout_copy
 from #turnhout;
 
@@ -285,19 +293,24 @@ where sales.deptname = 'Clothes'
 union
 select delivery.itemname
 from xdel as delivery
-where delivery.splno = '102'
+where delivery.splno in (select supplier.splno
+						 from xspl as supplier
+						 where supplier.splname = 'Nepalese Corp.')
 order by sales.itemname asc;
 
 --15b
 select delivery.itemname
 from xdel as delivery
 inner join xsale as sales on delivery.deptname = sales.deptname
-where delivery.splno = '102'
+where delivery.splno in (select supplier.splno
+						 from xspl as supplier
+						 where supplier.splname = 'Nepalese Corp.')
 or (sales.deptname = 'Clothes' and sales.itemname = delivery.itemname)
 group by delivery.itemname;
 
 
 --16a
+-- we interpreted 'that  are  not  sold  in  the  Clothes department.' as: Items that have not been sold to a customer, so items that are not in the xsale table
 select delivery.itemname
 from xdel as delivery
 where delivery.splno in (select supplier.splno
@@ -310,6 +323,7 @@ where sales.deptname = 'Clothes'
 order by delivery.itemname asc;
 
 --16b
+-- we interpreted 'that  are  not  sold  in  the  Clothes department.' as: Items that have not been sold to a customer, so items that are not in the xsale table
 select distinct itemname
 from xdel
 where splno = (select splno
@@ -326,7 +340,9 @@ inner join xitem as items on items.itemname = sales.itemname
 inner join xdel as delivery on delivery.itemname = items.itemname
 where (items.itemtype = 'E' or items.itemtype = 'F')
 and (sales.deptname = 'Navigation')
-and (delivery.splno = 102);
+and delivery.splno in (select supplier.splno
+						 from xspl as supplier
+						 where supplier.splname = 'Nepalese Corp.');
 
 --18a
 drop table if exists #turnhout_cartesian_temp
