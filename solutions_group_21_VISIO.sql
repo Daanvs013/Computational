@@ -136,8 +136,8 @@ create table group21_training
 	foreign key (reg_num) references group21_buses(reg_num),
 	foreign key (emp_num) references group21_employees(emp_num)
 );
-insert into group21_training values(1,1,231,'09/03/2005')
-insert into group21_training values(2,2,232,'09/03/2005')
+insert into group21_training values(1,1,533,'09/03/2005')
+insert into group21_training values(2,2,573,'09/03/2005')
 
 /*
 --show tables
