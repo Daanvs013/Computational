@@ -1,8 +1,27 @@
 ---		Question 23 GROUP 21 
 ---		first check dataset in the procedure function
 ---		then run the entire file in batches going from top to bottom, or just run the entire file in one go
+---     script extremely slow, takes around 6 minutes to run through a dataset of 1000 samples
 
 -- helper functions                    ------------------
+drop type if exists dbo.turnhout_table;
+go
+create type dbo.turnhout_table as table
+(
+	id int,
+	author varchar(1024),
+	title varchar(1024),
+	ISSN varchar(1024),
+	XP varchar(1024),
+	pages varchar(1024),
+	volume varchar(1024),
+	publication_year varchar(1024),
+	publication_month varchar(1024)
+);
+go
+
+drop function if exists dbo.turnhout_cleanIt;
+go
 create function dbo.turnhout_cleanIt
 (	
 	@inputstring nvarchar(1024), @invalidcharacters  nvarchar(1024)
@@ -21,6 +40,8 @@ declare @pos int
 end;
 go
 
+drop function if exists dbo.turnhout_replace;
+go
 create function dbo.turnhout_replace
 (
 	@inputstring nvarchar(1024),@invalidcharacters nvarchar(1024),@replacewith nvarchar(1024)
@@ -38,6 +59,8 @@ declare @pos int
 end;
 go
 
+drop function if exists dbo.turnhout_getAuthor;
+go
 create function dbo.turnhout_getAuthor 
 (
 	--allmost all name variants have the author name in the front of the string, so we will assume that this is the case for all
@@ -72,6 +95,8 @@ declare @pos int
 end;
 go
 
+drop function if exists dbo.turnhout_getISSN;
+go
 create function dbo.turnhout_getISSN
 (
 	@inputstring nvarchar(1024)
@@ -88,6 +113,8 @@ declare @pos int
 end;
 go
 
+drop function if exists dbo.turnhout_getXP;
+go
 create function dbo.turnhout_getXP
 (
 	@inputstring nvarchar(1024)
@@ -104,6 +131,8 @@ declare @pos int
 end;
 go
 
+drop function if exists dbo.turnhout_getPage;
+go
 create function dbo.turnhout_getPages
 (
 	@inputstring nvarchar(1024)
@@ -145,6 +174,8 @@ declare @pos int
 end;
 go
 
+drop function if exists dbo.turnhout_getVolume
+go
 create function dbo.turnhout_getVolume
 (
 	@inputstring nvarchar(1024)
@@ -169,6 +200,8 @@ declare @pos int
 end;
 go
 
+drop function if exists dbo.turnhout_getTitle;
+go
 create function dbo.turnhout_getTitle
 (
 	@inputstring nvarchar(1024)
@@ -209,6 +242,8 @@ declare @pos int
 end;
 go
 
+drop function if exists dbo.turnhout_getYear;
+go
 create function dbo.turnhout_getYear
 (
 	@inputstring nvarchar(1024)
@@ -226,6 +261,8 @@ declare @pos int
 end;
 go
 
+drop function if exists dbo.turnhout_getMonth;
+go
 create function dbo.turnhout_getMonth
 (
 	@inputstring nvarchar(1024)
@@ -260,14 +297,44 @@ declare @pos int
 end;
 go
 
-create function dbo.getScore
+drop function if exists dbo.getScore;
+go
+create function dbo.getScore --rules are too simple so almost no matches are found
 (
-	@inputstring nvarchar(1024)
+	@validator dbo.turnhout_table readonly,
+	@to_validate nvarchar(1024)
 )
 returns int
 begin
 declare @score int
-	set @score = 2
+	set @score = 0
+	--how to calculate score: check if metadata from validator is in to_valide, add 1 to score if it is
+	
+	--check author
+	if patindex('%'+(select author from @validator)+'%',@to_validate) > 0
+		set @score = @score + 1
+	--check title
+	if patindex('%'+(select title from @validator)+'%',@to_validate) > 0
+		set @score = @score + 1
+	--check ISSN
+	if patindex('%'+(select ISSN from @validator)+'%',@to_validate) > 0
+		set @score = @score + 1
+	--check XP
+	if patindex('%'+(select XP from @validator)+'%',@to_validate) > 0
+		set @score = @score + 1
+	--check pages
+	if patindex('%'+(select pages from @validator)+'%',@to_validate) > 0
+		set @score = @score + 1
+	--check volume
+	if patindex('%'+(select volume from @validator)+'%',@to_validate) > 0
+		set @score = @score + 1
+	--check publication year
+	if patindex('%'+(select publication_year from @validator)+'%',@to_validate) > 0
+		set @score = @score + 1
+	--check publication month
+	if patindex('%'+(select publication_month from @validator)+'%',@to_validate) > 0
+		set @score = @score + 1
+
 	return @score
 end;
 go
@@ -275,18 +342,25 @@ go
 --------------------------------------------------------
 
 --Procedure
+drop procedure if exists turnhout;
+go
 create procedure turnhout
 as
 begin
 declare @pos int
 declare @id int
-declare @str nvarchar(1024)
+declare @str dbo.turnhout_table
+declare @threshold int
+declare @length int
 
 	--preclean data
 	drop table if exists #turnhout_temp
-	select top(1000) npl_publn_id as id, dbo.turnhout_cleanIt(Ltrim(Rtrim(npl_biblio)),'%[.@#$%^&*/\<>+=-_]%') as npl_biblio, null as cluster_id
+	select npl_publn_id as id, dbo.turnhout_cleanIt(Ltrim(Rtrim(npl_biblio)),'%[.@#$%^&*/\<>+=-_]%') as npl_biblio, null as cluster_id
 	into #turnhout_temp
 	from Patstat;
+
+	--store numbers of rows in variable
+	set @length = (select count(*) from #turnhout_temp)
 
 	--extract metadata
 	drop table if exists #turnhout_metadata
@@ -303,13 +377,13 @@ declare @str nvarchar(1024)
 	from #turnhout_temp;
 
 	--display metadata table
-	select *
-	from #turnhout_metadata;
+	/*select *
+	from #turnhout_metadata; */
 
 	--first iteration, add cluster_id 1 to a random row, we choose the first row
 	set @pos = 1;
 	update top(1) #turnhout_temp
-	set cluster_id = 1 --@pos
+	set cluster_id = 1
 
 	--while loop
 	-- structure:
@@ -317,24 +391,54 @@ declare @str nvarchar(1024)
 	--	2. after matching, increase @pos with 1 and add that cluster_id to a random row with a null as cluster_id
 	--  3. go back to first step
 	--  4 stop if all rows have a non null cluster_id
-	while ((select count(cluster_id) from #turnhout_temp where cluster_id = null)>0)
+	set @threshold = 2
+	while ((select count(*) from #turnhout_temp where cluster_id is NULL)>0)
 	begin
+		--add breaker to stop infinite loop
+		if @pos = @length
+			break
+
 		--get rowid with cluster_id = @pos
 		set @id = (select top(1) id from #turnhout_temp where cluster_id = @pos)
-		--get corresponding row in the metadata table
-		set @str = (select top(1) * from #turnhout_metadata where id = @id)
+		--get the corresponding metadata and insert into a UDT
+		delete @str;--empty table
+		insert into @str
+		select top(1) * from #turnhout_metadata where id = @id;
 
-		--apply score function to all rows that have not received a cluster_id
-		select *,dbo.getScore(@str) as score
+
+		--add rows that get a matching score greater than the threshold to a temp helper table
+		drop table if exists #turnhout_helper
+		select id
+		into #turnhout_helper
 		from #turnhout_temp
-		where cluster_id = null
-		break;
+		where cluster_id is NULL
+		group by id,npl_biblio --id is unique so doesnt change anything but is needed for the having clause
+		having dbo.getScore(@str ,npl_biblio) > @threshold
+
+		--update cluster id on the rows which received a large enough matching score
+		update #turnhout_temp
+		set cluster_id = @pos
+		where id in (select id from #turnhout_helper)
+
+
+		--increase @pos with 1
+		set @pos = @pos + 1
+		--assign the new cluster_id to a random non null cluster_id row
+		update top(1) #turnhout_temp
+		set cluster_id = @pos
+		where cluster_id is NULL
+		--end of iteration
 	end
 
+	--display end result
+	/*select *
+	from #turnhout_temp*/
 
-	--drop all tables made in procedure
-	drop table if exists #turnhout_metadata
-	drop table if exists #turnhout_temp
+	--output
+	drop table if exists group21_patstat_clusters
+	select npl_biblio,cluster_id
+	into group21_patstat_clusters
+	from #turnhout_temp
 
 end;
 go
@@ -343,16 +447,28 @@ go
 exec turnhout
 go
 
+--show results
+select *
+from group21_patstat_clusters
+where cluster_id = 891
+
+
+
 --drop all
-drop procedure turnhout;
-drop function dbo.turnhout_cleanIt;
-drop function dbo.turnhout_replace;
-drop function dbo.turnhout_getAuthor;
-drop function dbo.turnhout_getISSN;
-drop function dbo.turnhout_getXP;
-drop function dbo.turnhout_getPages;
-drop function dbo.turnhout_getVolume;
-drop function dbo.turnhout_getTitle;
-drop function dbo.turnhout_getYear;
-drop function dbo.turnhout_getMonth;
-drop function dbo.getScore;
+drop procedure if exists turnhout;
+drop function if exists dbo.getScore;
+drop function if exists dbo.turnhout_getMonth;
+drop function if exists dbo.turnhout_getYear;
+drop function if exists dbo.turnhout_getTitle;
+drop function if exists dbo.turnhout_getVolume;
+drop function if exists dbo.turnhout_getPages;
+drop function if exists dbo.turnhout_getXP;
+drop function if exists dbo.turnhout_getISSN;
+drop function if exists dbo.turnhout_getAuthor;
+drop function if exists dbo.turnhout_replace;
+drop function if exists dbo.turnhout_cleanIt;
+drop type if exists dbo.turnhout_table;
+--drop all tables made in procedure
+drop table if exists #turnhout_metadata
+drop table if exists #turnhout_temp
+drop table if exists #turnhout_helper
