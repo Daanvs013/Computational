@@ -48,11 +48,11 @@ group by items.itemname,xdept.deptfloor,items.itemcolor; -- group by to only sho
 select distinct * 
 from xitem as items
 where items.itemcolor = 'Brown' -- check item color
-and items.itemname in (select sales.itemname -- check if item corresponds to a sale that is from a department from floor 1
+and items.itemname in (select sales.itemname -- check if item corresponds to a sale that is from a department from floor 2
 					  from xsale as sales 
-					  where sales.deptname in (select departments.deptname --check if sale is from a department from floor 1
+					  where sales.deptname in (select departments.deptname --check if sale is from a department from floor 2
 											   from xdept as departments
-											   where departments.deptfloor = 1)); -- check if floor is 1
+											   where departments.deptfloor = 2)); -- check if floor is 2
 
 --2c
 select distinct *
@@ -63,7 +63,7 @@ and exists (select sales.itemname
 			where sales.itemname = items.itemname -- check if itemnames in the two tables match
 			and exists (select departments.deptname
 						  from xdept as departments
-						  where departments.deptfloor = 1 -- check if floor is 1
+						  where departments.deptfloor = 2 -- check if floor is 2
 						  and departments.deptname = sales.deptname)); -- check if deptname in the two tables match
 
 --3
