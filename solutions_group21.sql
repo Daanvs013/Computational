@@ -115,7 +115,7 @@ drop table #avg_marketing_table;
 drop table #avg_purchasing_table;
 drop table #dif_salary_table;
 
---Q6 
+--Q6a 
 select empsalary
 from xemp
 where empno = (select bossno
@@ -123,7 +123,7 @@ where empno = (select bossno
 			   where empno = (select bossno	
 							  from xemp
 							  where empfname ='Nancy'))
-
+--Q6b
 select empfname
 from xemp
 where bossno = (select empno
@@ -131,15 +131,18 @@ where bossno = (select empno
 				where empfname = 'Andrew')
 order by empfname
 
+--Q6c
 select a.empfname, a.deptname, b.empfname as bossname, b.deptname
 from xemp as a
 join xemp as b on a.bossno = b.empno
 
+--Q6d
 select a.empno, a.empfname, (a.empsalary - b.empsalary) as salary_dif
 from xemp as a
 join xemp as b on a.bossno = b.empno
 where a.empsalary > b.empsalary
 
+--Q6e
 select a.empfname, a.empsalary, b.empfname as bossname
 from xemp as a
 join xemp as b on a.bossno = b.empno
