@@ -2,8 +2,6 @@
  Group 21
  Daan van Turnhout 2051976
 
-vragen geupdate op 6-10-2022: 2 aangepast, 4,6,16b,18 van nick gepakt, interpretatie gegeven bij 8,9,15,16,17
-
 */
 
 
