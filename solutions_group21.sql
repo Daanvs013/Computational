@@ -347,28 +347,26 @@ and delivery.splno in (select supplier.splno
 						 from xspl as supplier
 						 where supplier.splname = 'Nepalese Corp.');
 
---18a
-drop table if exists #turnhout_cartesian_temp
-select sales.saleno,sales.saleqty,sales.itemname as sale_itemname,sales.deptname, items.itemname as item_itemname,items.itemtype,items.itemcolor
-into #turnhout_cartesian_temp
-from xsale as sales ,xitem as items;
-
---Q18
+ 
+ --Q18a
 drop table if exists #cartesian_temp
 select sales.saleno,sales.saleqty,sales.itemname as sale_itemname,sales.deptname, items.itemname as item_itemname,items.itemtype,items.itemcolor
 into #cartesian_temp
 from xsale as sales ,xitem as items;
 
+--Q18b
 --Cartesian product so all records are unique
 drop table if exists #unique_records
 select *
 into #unique_records
 from #cartesian_temp
 
+--Q18c
 -- As unique records has the same amount of rows as the cartesian product we know that there are no duplicates
 delete
 from #cartesian_temp
 
+--Q18d
 drop table #cartesian_temp
 drop table #unique_records
 
