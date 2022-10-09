@@ -36,35 +36,30 @@ where empsalary < 25000;
 drop table #turnhout;
 
 --2a
-select items.itemname,xdept.deptfloor,items.itemcolor
-from xitem as items
-inner join xsale on xsale.itemname = items.itemname --join sales and items
-inner join xdept on xdept.deptname = xsale.deptname -- join department and sales
-where items.itemcolor = 'Brown' -- check color
-and xdept.deptfloor = 2 --check floor = 2
-group by items.itemname,xdept.deptfloor,items.itemcolor; -- group by to only show unique results
+--Join clause
+select distinct a.itemname, a.itemcolor, c.deptfloor
+from xitem as a
+join xsale as b on a.itemname = b.itemname
+join xdept as c on b.deptname = c.deptname
+where c.deptfloor = 2 and a.itemcolor = 'Brown'
 
---2b
-select distinct * 
-from xitem as items
-where items.itemcolor = 'Brown' -- check item color
-and items.itemname in (select sales.itemname -- check if item corresponds to a sale that is from a department from floor 2
-					  from xsale as sales 
-					  where sales.deptname in (select departments.deptname --check if sale is from a department from floor 2
-											   from xdept as departments
-											   where departments.deptfloor = 2)); -- check if floor is 2
+--In clause
+select distinct a.itemname, a.itemcolor
+from xitem as a
+where a.itemname in (select b.itemname
+					 from xsale as b
+					 where b.deptname in (select c.deptname
+										  from xdept as c
+										  where c.deptfloor = 2)) and a.itemcolor = 'Brown';
 
---2c
-select distinct *
-from xitem as items
-where items.itemcolor = 'Brown' -- check item color
-and exists (select sales.itemname 
-			from xsale as sales
-			where sales.itemname = items.itemname -- check if itemnames in the two tables match
-			and exists (select departments.deptname
-						  from xdept as departments
-						  where departments.deptfloor = 2 -- check if floor is 2
-						  and departments.deptname = sales.deptname)); -- check if deptname in the two tables match
+--Exist clause
+select distinct a.itemname, a.itemcolor
+from xitem as a
+where exists (select b.itemname
+			  from xsale as b
+			  where a.itemname = b.itemname and exists (select c.deptname
+														from xdept as c
+														where b.deptname = c.deptname and c.deptfloor = 2)) and a.itemcolor = 'Brown';
 
 --3
 select distinct *
@@ -78,7 +73,7 @@ where departments.deptname not in (select sales.deptname
 -- So this query should result in an empty table
 select distinct a.*, d.*
 from xemp as a
-inner join xdept as b on a.deptname = b.deptname
+inner join xdept as b on a.empno = b.empno
 inner join xsale as c on b.deptname = c.deptname
 inner join xitem as d on c.itemname = d.itemname
 inner join xdel as e on d.itemname = e.itemname
@@ -149,63 +144,57 @@ join xemp as b on a.bossno = b.empno
 where a.deptname = 'Accounting' and a.empsalary > 20000
 
 --7
-select supplier.splname, count(delivery.itemname) as total
-from xdel as delivery
-inner join xspl as supplier on supplier.splno = delivery.splno
-group by supplier.splname
-having count(delivery.itemname)>=5
-order by total desc;
+select b.splname, count(distinct a.itemname) as total
+from xdel as a
+join xspl as b on a.splno = b.splno
+group by b.splname
+having count(distinct a.itemname) >= 5
+order by b.splname;
 
 --8
 -- we interpreted 'that sell at least 5 items' as: the department has made at least 5 sales in the sales table
-select department.deptname,sum(sales.saleqty) as total
-from xdept as department
-inner join xsale as sales on sales.deptname = department.deptname
-where department.deptfloor = 1 or department.deptfloor = 2
-group by sales.itemname,department.deptname
-having sum(sales.saleqty) >= 5;
-
---9
-drop table if exists #turnhout
-select boss.empno,boss.empfname,count(employee.bossno) as direct_employees
-into #turnhout
-from xemp as boss
-left join xemp as employee on employee.bossno = boss.empno
-group by boss.empfname,boss.empno;
+select a.deptname, count(b.itemname) 
+from xdept as a
+join xsale as b on b.deptname = a.deptname
+where a.deptfloor in (1,2)
+group by a.deptname
+having count(b.itemname) >= 5
 
 --9a
-select *
-from #turnhout;
+select a.empfname as manager, count(b.empfname) as direct_employees
+into #direct
+from xemp as a
+join xemp as b on a.empno = b.bossno
+group by a.empfname
 
 --9b
---more than 1 manager with the lowest direct employees, so we will return all managers who have the lowest number of direct employees,
---we also exclude all managers who have no direct employees, 
---because we interpreted the question in this way.
-select employee.empfname,employee.direct_employees as manager_name 
-from #turnhout as employee
-where employee.direct_employees > 0
-and employee.direct_employees = (select min(employee.direct_employees) as direct_employees
-								 from #turnhout as employee
-								 where employee.direct_employees >0)
-drop table #turnhout;
+select *
+from #direct 
+where #direct.direct_employees = (select Min(#direct.direct_employees)
+								  from #direct)
+drop table #direct
 
 --10a
 drop table if exists #turnhout
-select *
+select top(1000) *
 into #turnhout
 from xemp as employee
 where employee.empsalary > (select max(a.empsalary) as max_salary
 							from xemp as a
-							where a.deptname = 'Clothes');
+							where a.deptname = 'Clothes')
+order by empsalary asc;
+
 --10b
 drop table if exists #turnhout_copy
-select *, rank() over(order by empsalary asc) salary_rank
+select top(1000) *, rank() over(order by empsalary desc) salary_rank
 into #turnhout_copy
-from #turnhout;
+from #turnhout
+order by empsalary;
 
 --10c
 select top 3 empsalary
-from #turnhout_copy;
+from #turnhout_copy
+order by empsalary desc;
 
 --10d
 drop table #turnhout;
@@ -290,6 +279,7 @@ select * from #result; --redundant statement, can be removed, remove before uplo
 drop table #result;
 
 --15a
+-- we interpret items as 'sold' as items having an entry in the sales table, so items that customers have bought
 select sales.itemname
 from xsale as sales
 where sales.deptname = 'Clothes'
@@ -337,7 +327,7 @@ where splno = (select splno
 
 
 --17
-select sales.deptname
+-- we interpret 'sold' by the navigation department as the entries in the sales table which have department name = navigation
 from xsale as sales
 inner join xitem as items on items.itemname = sales.itemname
 inner join xdel as delivery on delivery.itemname = items.itemname
@@ -407,9 +397,6 @@ from Patstat_golden_set, (select count(*) as total
 																							   from #turnhout_result) as variance
 group by cluster_id, total, mean, variance
 order by n_pubs desc;
-
-select *
-from #turnhout_result
 
 --20e
 drop table #turnhout_result
