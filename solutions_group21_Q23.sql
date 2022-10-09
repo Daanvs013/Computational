@@ -1,7 +1,7 @@
 ---		Question 23 GROUP 21 
 ---		first check dataset in the procedure function
 ---		then run the entire file in batches going from top to bottom, or just run the entire file in one go
----     script extremely slow, takes around 6 minutes to run through a dataset of 1000 samples
+---     script is very slow, results is already in a table called group21_patstat_clusters_copy
 
 -- helper functions                    ------------------
 drop type if exists dbo.turnhout_table;
@@ -355,7 +355,7 @@ declare @length int
 
 	--preclean data
 	drop table if exists #turnhout_temp
-	select npl_publn_id as id, dbo.turnhout_cleanIt(Ltrim(Rtrim(npl_biblio)),'%[.@#$%^&*/\<>+=-_]%') as npl_biblio, null as cluster_id
+	select top(1000) npl_publn_id as id, dbo.turnhout_cleanIt(Ltrim(Rtrim(npl_biblio)),'%[.@#$%^&*/\<>+=-_]%') as npl_biblio, null as cluster_id
 	into #turnhout_temp
 	from Patstat;
 
