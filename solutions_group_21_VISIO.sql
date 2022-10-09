@@ -48,7 +48,7 @@ insert into group21_employees values(334,2,'Bas',57000)
 insert into group21_employees values(234,1,'Daan',67000)
 insert into group21_employees values(432,2,'Klaas',14000)
 insert into group21_employees values(987,1,'Tjeerd',45700)
-insert into group21_employees values(573,2,'Joe',89000)
+insert into group21_employees values(573,2,'Nick',89000)
 
 drop table if exists group21_cleaners;
 create table group21_cleaners
