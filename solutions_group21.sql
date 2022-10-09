@@ -68,7 +68,7 @@ where departments.deptname not in (select sales.deptname
 								   from xsale as sales
 								   where sales.itemname like '%compass%');
 
--- Q4
+-- 4
 -- no results because Q3 implies that the department marketing has not sold (to a customer as a record in the xsale table) a compass.
 -- So this query should result in an empty table
 select distinct a.*, d.*
@@ -110,7 +110,7 @@ drop table #avg_marketing_table;
 drop table #avg_purchasing_table;
 drop table #dif_salary_table;
 
---Q6a 
+--6a 
 select empsalary
 from xemp
 where empno = (select bossno
@@ -118,7 +118,7 @@ where empno = (select bossno
 			   where empno = (select bossno	
 							  from xemp
 							  where empfname ='Nancy'))
---Q6b
+--6b
 select empfname
 from xemp
 where bossno = (select empno
@@ -126,18 +126,18 @@ where bossno = (select empno
 				where empfname = 'Andrew')
 order by empfname
 
---Q6c
+--6c
 select a.empfname, a.deptname, b.empfname as bossname, b.deptname
 from xemp as a
 join xemp as b on a.bossno = b.empno
 
---Q6d
+--6d
 select a.empno, a.empfname, (a.empsalary - b.empsalary) as salary_dif
 from xemp as a
 join xemp as b on a.bossno = b.empno
 where a.empsalary > b.empsalary
 
---Q6e
+--6e
 select a.empfname, a.empsalary, b.empfname as bossname
 from xemp as a
 join xemp as b on a.bossno = b.empno
@@ -338,25 +338,25 @@ and delivery.splno in (select supplier.splno
 						 where supplier.splname = 'Nepalese Corp.');
 
  
- --Q18a
+ --18a
 drop table if exists #cartesian_temp
 select sales.saleno,sales.saleqty,sales.itemname as sale_itemname,sales.deptname, items.itemname as item_itemname,items.itemtype,items.itemcolor
 into #cartesian_temp
 from xsale as sales ,xitem as items;
 
---Q18b
+--18b
 --Cartesian product so all records are unique
 drop table if exists #unique_records
 select *
 into #unique_records
 from #cartesian_temp
 
---Q18c
+--18c
 -- As unique records has the same amount of rows as the cartesian product we know that there are no duplicates
 delete
 from #cartesian_temp
 
---Q18d
+--18d
 drop table #cartesian_temp
 drop table #unique_records
 
