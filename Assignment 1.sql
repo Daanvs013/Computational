@@ -206,6 +206,24 @@ select *, rtrim(left(itemname, charindex(' ', itemname))) as itemname_firstword
 from xitem
 -- nu nog een functie dr van maken
 
+--Q14
+select deptname, avg(empsalary) as average_salary 
+into #helper
+from xemp
+group by deptname
+order by average_salary desc
+
+select deptname, average_salary
+into #result
+from #helper as a
+where a.average_salary = (select max(average_salary)
+						  from #helper) or a.average_salary = (select min(average_salary)
+															   from #helper)
+
+
+drop table #helper
+drop table #result
+
 --Q16
 select distinct itemname
 from xdel
@@ -244,6 +262,19 @@ from #cartesian_temp
 
 drop table #cartesian_temp
 drop table #unique_records
+
+--Q20
+select cluster_id, count(*) as n_pubs, 100*convert(float,count(cluster_id))/total as probability
+into #result
+from patstat_golden_set, (select count(*) as total from patstat_golden_set) as total 
+group by cluster_id, total
+order by n_pubs desc
+
+drop table #result
+
+select cluster_id, n_pubs, (n_pubs - average)/variance as nomalized_n_pubs
+from #result, (select avg(n_pubs) as average from #result) as average, (select var(n_pubs) as variance from #result) as variance
+
 
 
 
