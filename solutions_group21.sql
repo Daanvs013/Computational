@@ -1,6 +1,5 @@
 /*
  Group 21
- Daan van Turnhout 2051976
 
 */
 
@@ -255,7 +254,7 @@ from xitem as items;
 drop function dbo.turnhout_getFirstWord;
 
 --14abc
-drop table if exists #result -- redundanct statement, can be removed, remove before uploading
+--first query
 select 'highest_avg_salary' as type,employee.deptname as department --one single query with subqueriesssss
 into #result
 from xemp as employee
@@ -272,8 +271,9 @@ having avg(employee.empsalary) = (select min(avg_salary_dept.avg) as min_avg_sal
 								  from (select avg(employee.empsalary) as avg --subquery to calculate all average salaries from each department
 										from xemp as employee
 										group by employee.deptname) as avg_salary_dept); -- call subquery as avg_salary_dept
+--select * from #result
 --14d
-select * from #result; --redundant statement, can be removed, remove before uploading
+--second query
 drop table #result;
 
 --15a
@@ -326,6 +326,7 @@ where splno = (select splno
 
 --17
 -- we interpret 'sold' by the navigation department as the entries in the sales table which have department name = navigation
+select *
 from xsale as sales
 inner join xitem as items on items.itemname = sales.itemname
 inner join xdel as delivery on delivery.itemname = items.itemname
