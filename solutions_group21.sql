@@ -38,7 +38,7 @@ select distinct a.itemname, a.itemcolor, c.deptfloor
 from xitem as a
 join xsale as b on a.itemname = b.itemname
 join xdept as c on b.deptname = c.deptname
-where c.deptfloor = 2 and a.itemcolor = 'Brown'
+where c.deptfloor = 2 and a.itemcolor = 'Brown' -- check deptfloor and itemcolor
 
 --In clause
 select distinct a.itemname, a.itemcolor
@@ -94,7 +94,7 @@ where employee.deptname = 'Purchasing';
 
 --5cd
 drop table if exists #dif_salary_table
-select abs(p.avg_salary - m.avg_salary) as dif_salary
+select abs(p.avg_salary - m.avg_salary) as dif_salary -- use abs() to calculate absolute difference
 into #dif_salary_table
 from #avg_marketing_table as m
 join #avg_purchasing_table as p on p.id = m.id;
@@ -126,13 +126,13 @@ order by empfname
 --6c
 select a.empfname, a.deptname, b.empfname as bossname, b.deptname
 from xemp as a
-join xemp as b on a.bossno = b.empno
+join xemp as b on a.bossno = b.empno -- use a join to see who is whose boss
 
 --6d
 select a.empno, a.empfname, (a.empsalary - b.empsalary) as salary_dif
 from xemp as a
 join xemp as b on a.bossno = b.empno
-where a.empsalary > b.empsalary
+where a.empsalary > b.empsalary -- check if salary satisfies the given condition
 
 --6e
 select a.empfname, a.empsalary, b.empfname as bossname
@@ -173,7 +173,7 @@ drop table #direct
 
 --10a
 drop table if exists #turnhout
-select top(1000) *
+select top(1000) * -- for some reason, this line was necessary to get the results ordered in a temporary table
 into #turnhout
 from xemp as employee
 where employee.empsalary > (select max(a.empsalary) as max_salary
@@ -183,7 +183,7 @@ order by empsalary asc;
 
 --10b
 drop table if exists #turnhout_copy
-select top(1000) *, rank() over(order by empsalary desc) salary_rank
+select top(1000) *, rank() over(order by empsalary desc) salary_rank -- see 10a for comment on select top(1000)
 into #turnhout_copy
 from #turnhout
 order by empsalary;
@@ -191,7 +191,7 @@ order by empsalary;
 --10c
 select top 3 empsalary
 from #turnhout_copy
-order by empsalary desc;
+order by empsalary desc; -- since we want the highest salaries, we reverse the table
 
 --10d
 drop table #turnhout;
