@@ -264,6 +264,7 @@ having avg(employee.empsalary) = (select max(avg_salary_dept.avg) as max_avg_sal
 										from xemp as employee
 										group by employee.deptname) as avg_salary_dept) -- call subquery as avg_salary_dept
 union
+--second query
 select 'lowest_avg_salary'as type,employee.deptname as department
 from xemp as employee
 group by employee.deptname
@@ -271,9 +272,7 @@ having avg(employee.empsalary) = (select min(avg_salary_dept.avg) as min_avg_sal
 								  from (select avg(employee.empsalary) as avg --subquery to calculate all average salaries from each department
 										from xemp as employee
 										group by employee.deptname) as avg_salary_dept); -- call subquery as avg_salary_dept
---select * from #result
 --14d
---second query
 drop table #result;
 
 --15a
