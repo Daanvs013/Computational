@@ -326,7 +326,7 @@ where splno = (select splno
 
 --17
 -- we interpret 'sold' by the navigation department as the entries in the sales table which have department name = navigation
-select *
+select sales.deptname
 from xsale as sales
 inner join xitem as items on items.itemname = sales.itemname
 inner join xdel as delivery on delivery.itemname = items.itemname
