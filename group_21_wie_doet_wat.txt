@@ -1,6 +1,8 @@
 Who did what?
 
 MS Access: Daan Spanbroek
-MS SQL except question 23: Daan van Turnhout, Hendrik (Nick) Verkaik and Dico de Gier each did this entire part (as extra practice for the exam). Dico de Gier then compared each file of written queries and final edits where done by the three of us.
+MS SQL except question 23: Daan van Turnhout, Hendrik (Nick) Verkaik and Dico de Gier each did this entire part (as extra practice for the exam). Dico de Gier then compared and checked each file of written queries and final edits where done by the three of us.
 MS SQL question 23: Daan van Turnhout wrote most of the code, with the help of Hendrik (Nick) Verkaik
 MS Visio: Daan Spanbroek made the diagrams, implementation into SQL was done by Daan van Turnhout
+
+Overall, we all agree that everyone did what they had to do and are satisfied with the result.
