@@ -20,6 +20,8 @@ conn = db.connect('Driver={SQL Server};'
 sql_query = 'select * from Patstat_golden_set'
 df = pd.read_sql(sql_query,conn)
 print(df)
+for index,row in df.iterrows():
+    print(row)
 
 
 
