@@ -14,12 +14,12 @@ def rule1(list1, list2):
     iss2 = list2[4]
     if math.isnan(vol1) == False and math.isnan(vol2) == False == False and vol1 == vol2:
         score += 1
-        if math.isnan(pag1) == False and math.isnan(pag2) == False and pag1 == pag2:
+        if pag1 == pag2:
             score += 2
             if math.isnan(iss1) == False and math.isnan(iss2) == False and iss1 == iss2:
                 score += 3
     else:
-        if math.isnan(pag1) == False and math.isnan(pag2) == False and pag1 == pag2:
+        if pag1 == pag2:
             score += 1
             if math.isnan(iss1) == False and math.isnan(iss2) == False and iss1 == iss2:
                 score += 1
@@ -151,8 +151,8 @@ def rule7(list1, list2, threshold):
     score = 0
     if type(tit1) == str and type(tit2) == str and sm(None,tit1.lower(), tit2.lower()).ratio() >= threshold:
         score += 2
-        if math.isnan(pag1) == False and math.isnan(pag2) == False and pag1 == pag2:
+        if pag1 == pag2:
             score += 3
-    elif math.isnan(pag1) == False and math.isnan(pag2) == False and pag1 == pag2:
+    elif pag1 == pag2:
         score += 2
     return score

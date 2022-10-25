@@ -4,7 +4,7 @@ import numpy as np
 
 d = {'author':['jan','piet','bas',np.nan], 'title':['hocus','pocus','pas','hocus'],
 'journal':['sci','science',np.nan,'science'], 'volume':[1,4,19,np.nan], 'issue':[4,np.nan,np.nan,4],
-'pagina':[200,205,3,200], 'jaar':[np.nan, 2019,1999,1999], 'month':[np.nan,2,np.nan,np.nan],
+'pagina':['200','205','3','200'], 'jaar':[np.nan, 2019,1999,1999], 'month':[np.nan,2,np.nan,np.nan],
 'ISSN':[2,4,7,2], 'XP':[np.nan, np.nan, 3, 8], 'DOI':[np.nan,np.nan,np.nan,np.nan]}
 df = pd.DataFrame(data = d)
 column = range(len(df.index))
