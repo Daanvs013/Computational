@@ -11,7 +11,7 @@ print(clusters)
 k = 0
 c = 0
 while k < len(scores.index):
-    clusters.iloc[k,0] = k
+    clusters.iloc[k,0] = gs.df.loc[k,'npl_id']
     if clusters.iloc[k,1] == 0:
         c += 1
         clusters.iloc[k,1] = c
