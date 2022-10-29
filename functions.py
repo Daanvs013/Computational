@@ -221,8 +221,6 @@ def getAuthor(input):
 
     return output
 
-print(getAuthor('E.F. Codd, iekie'))
-
 def getTitle(input):
     ## authors section almost always ends in et al or :
     pos = re.search('(?i)et al|:',input)
