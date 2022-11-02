@@ -6,8 +6,6 @@
 ## modules
 import re
 
-from sqlalchemy import false
-
 ## functions
 def cleanString(input):
     output = input
