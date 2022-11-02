@@ -130,6 +130,7 @@ def main(dataset):
                     clusters.iloc[m,2] = scores.df.iloc[m,k]
             m += 1
         k += 1
+    clusters = clusters.drop("Max Score", axis=1)
     ##print(clusters)
 
     """ Part IV Results"""
