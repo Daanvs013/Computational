@@ -19,7 +19,7 @@ def getYear(input):
     pos = re.search("\d\d\d\d",input) ## check for 4 digits directly after earch other
     counter = 0
     output = None
-    while counter < len(input): 
+    while output == None: 
         if pos != None:
             if counter == 0:
                 output = input[pos.span()[0]:pos.span()[1]]
