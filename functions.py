@@ -5,7 +5,7 @@
 
 ## modules
 import re
-
+ 
 ## functions
 def cleanString(input):
     output = input
@@ -168,10 +168,18 @@ def getPages(input):
     else:
         pos = pos.span() 
         page_numbers = input[pos[1]+1:].strip()
+        output = page_numbers
+        pos = re.search('\s',input) ## returns a match if double space is found, else returns None
+        while pos != None: 
+            output = re.sub('\s','',output)
+            pos = re.search('\s',output)
         ## split on white space or comma for example: "pages: 100-110 word" or "pages: 100-110, word"
-        pos = re.search("\s|,",page_numbers) ## returns tuple with start and end position of a single space in the string 
+        pos = re.search(",",output) ## returns tuple with start and end position of a single space in the string 
         if (pos != None):
             pos = pos.span()
+            page_numbers = output[0:pos[0]].strip()
+        elif re.search('(?i)[a-z]|\(', page_numbers) != None:
+            pos = re.search('(?i)[a-z]|\(', page_numbers).span()
             page_numbers = page_numbers[0:pos[0]].strip()
         else: ## pages numbers are the last characters in the string
             pass
@@ -190,33 +198,43 @@ def getVol(input):
         if (pos != None):
             output = output[pos.span()[0]:]
 
-            ## case 1, look for single space as end of volume number
-            ## case 2, look for comma as end of volume number
+            ## case 1, issue is in brackets after the volume
+            ## case 2, look for single space as end of volume number
+            ## case 3, look for comma as end of volume number
 
-            ##first check which case is applicable
-            poswhitespace = re.search('\s',output)
-            poscomma = re.search(',',output)
-            if (poswhitespace != None and poscomma != None):
-                poscomma = poscomma.span()
-                poswhitespace = poswhitespace.span()
-                if (poswhitespace[0] > poscomma[0]):
+            
+            ##first check case 1
+            posbracket = re.search('\(', output)
+            if posbracket != None:
+                posbracket = posbracket.span()
+                return output[0:posbracket[0]]
+
+            ##then check whether case 2 or case 3 is applicable
+            else:
+                poswhitespace = re.search('\s',output)
+                poscomma = re.search(',',output)
+                if (poswhitespace != None and poscomma != None):
+                    poscomma = poscomma.span()
+                    poswhitespace = poswhitespace.span()
+                    if (poswhitespace[0] > poscomma[0]):
+                        output = output[0:poscomma[0]]
+                    else:
+                        output = output[0:poswhitespace[0]]
+                elif (poswhitespace != None and poscomma == None):
+                    poswhitespace = poswhitespace.span()
+                    output = output[0:poswhitespace[0]]
+                elif (poswhitespace == None and poscomma != None):
+                    poscomma = poscomma.span()
                     output = output[0:poscomma[0]]
                 else:
-                    output = output[0:poswhitespace[0]]
-            elif (poswhitespace != None and poscomma == None):
-                poswhitespace = poswhitespace.span()
-                output = output[0:poswhitespace[0]]
-            elif (poswhitespace == None and poscomma != None):
-                poscomma = poscomma.span()
-                output = output[0:poscomma[0]]
-            else:
-                output = None
+                    output = None
     else:
         output = None
     return output
 
 def getIssue(input):
-    pos = re.search('(?i)no.',input)
+    # extra 'functie' toegevoegd om te kijken naar getallen tussen haakjes
+    pos = re.search('(?i)no\.',input)
     if (pos != None):
         pos = pos.span()
         output = input[pos[1]:].strip()
@@ -250,8 +268,23 @@ def getIssue(input):
                 output = output[0:poscomma[0]]
             else:
                 output = None
-    else:
+        return output
+    first_bracket = input.find("(")+1
+    second_bracket = input.find(")")
+    if second_bracket < 0:
         output = None
+    else:
+        check = input[input.find("(")+1:input.find(")")]
+        if check != '':
+            check_1 = int(input.index(")")-1)
+            check_2 = int(input.index("(")+1)
+            if check_1 - check_2 < 2 and check.isnumeric():
+                output = check
+                return output
+            else:
+                output = getIssue(input[check_1 + 2:])
+        else:
+            output = None
     return output
 
 def getAuthor(input):
@@ -286,8 +319,11 @@ def getTitle(input):
         output = None
     return output
 
+def getJournal(input):
+    return None
 
-input = "Altschul S. F. et al. Gapped BLAST and PSI-BLAST: A new generation of protein database search programs Nucleic Acids Research. 1997, vol. 25(17), pages 3389-3402"
+
+input = "Altschul et al. Basic Local Alignment Search Tool, J. Mol. Biol., 215, pp. 403-410 (1990)."
 print(getPages(input))
 print(getXP(input))
 print(getISSN(input))
@@ -298,3 +334,4 @@ print(getAuthor(input))
 #print(getTitle(input))
 print(getYear(input))
 print(getMonth(input))
+print(getJournal(input))
