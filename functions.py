@@ -16,27 +16,14 @@ def cleanString(input):
     return output
 
 def getYear(input):
-    pos = re.search("\d\d\d\d",input) ## check for 4 digits directly after earch other
-    counter = 0
+    pos = re.findall("\d\d\d\d",input) ## find all numbers that have 4 digits 
     output = None
-    while output == None: 
-        if pos != None:
-            if counter == 0:
-                output = input[pos.span()[0]:pos.span()[1]]
-            else:
-                output = new_part[pos.span()[0]:pos.span()[1]]
-
-    
-            if int(output) in range(1900,2022):
-                output = output
-                break
-            else:
-                new_index = re.search(f"{output}([\d\D]*)", input)
-                new_part = new_index.group(1)
-                pos = re.search("\d\d\d\d",new_part)
-            counter += 1
-        else:
-            break
+    if pos!=None: ## for each number check if it is in the allowed range
+        for match in pos:
+            if int(match) in range(1900,2023):
+                output = match
+    else:
+        output = None
 
     return output
 
@@ -94,28 +81,33 @@ def getMonth(input):
 
 def getXP(input):
     pos = re.search('(?i)xp',input) 
-    if (pos == None):
-        return None
-    else:
+    while (pos != None):
         pos = pos.span() ## returns tuple with start and end position of XP in the string
-        output = input[pos[0]:].strip()
+        output = input[pos[0]+2:].strip()
+        output_copy = output
         ## XP-number might have an - or space or other interpunction between XP and number
         pos = re.search('\d', output) ##check where the first digit in the string is
         if (pos == None):
-            return None
+            continue
         else:
             pos = pos.span()
             output = output[pos[0]:pos[0] + 9] ## xp number is 9 digits
             
         output_splitted = re.split("(1|2|3|4|5|6|7|8|9|0)", output)
-        output_splitted = [x for x in output_splitted if x != '']  
+        output_splitted = [x for x in output_splitted if x != '']
+        counter = 1  
         for i in range(len(output_splitted)):
             number = output_splitted[i]
             if number.isnumeric():
+                counter += 1
+                if counter == 10:
+                    return output
                 continue
             else:
-                return None  
-        return output
+                pos = re.search('(?i)xp',output_copy)
+                input = output_copy
+                break
+    return output
 
 def getISSN(input):
     pos = re.search('(?i)issn|ISSN',input)
@@ -130,7 +122,7 @@ def getISSN(input):
             return None
         else:
             pos = pos.span()
-            output = output[pos[0]:pos[0] + 8] ## ISSN number is 8 characters
+            output = output[pos[0]:pos[0] + 9] ## ISSN number is 8 characters
             return output
 
 
@@ -188,6 +180,7 @@ def getPages(input):
 ############################################################################ alles hierboven is al gecontroleerd
 def getVol(input):
 
+    ## first look if there is an vol or deel keyword in the string
     pos = re.search('(?i)vol|deel',input)
     if (pos != None):
         pos = pos.span()
@@ -197,43 +190,30 @@ def getVol(input):
         pos = re.search('\d',output)
         if (pos != None):
             output = output[pos.span()[0]:]
-
-            ## case 1, issue is in brackets after the volume
-            ## case 2, look for single space as end of volume number
-            ## case 3, look for comma as end of volume number
-
-            
-            ##first check case 1
-            posbracket = re.search('\(', output)
-            if posbracket != None:
-                posbracket = posbracket.span()
-                return output[0:posbracket[0]]
-
-            ##then check whether case 2 or case 3 is applicable
-            else:
-                poswhitespace = re.search('\s',output)
-                poscomma = re.search(',',output)
-                if (poswhitespace != None and poscomma != None):
-                    poscomma = poscomma.span()
-                    poswhitespace = poswhitespace.span()
-                    if (poswhitespace[0] > poscomma[0]):
-                        output = output[0:poscomma[0]]
-                    else:
-                        output = output[0:poswhitespace[0]]
-                elif (poswhitespace != None and poscomma == None):
-                    poswhitespace = poswhitespace.span()
-                    output = output[0:poswhitespace[0]]
-                elif (poswhitespace == None and poscomma != None):
-                    poscomma = poscomma.span()
+            ## case 1, look for single space as end of volume number
+            ## case 2, look for comma as end of volume number
+            poswhitespace = re.search('\s',output)
+            poscomma = re.search(',',output)
+            if (poswhitespace != None and poscomma != None):
+                poscomma = poscomma.span()
+                poswhitespace = poswhitespace.span()
+                if (poswhitespace[0] > poscomma[0]):
                     output = output[0:poscomma[0]]
                 else:
-                    output = None
+                    output = output[0:poswhitespace[0]]
+            elif (poswhitespace != None and poscomma == None):
+                poswhitespace = poswhitespace.span()
+                output = output[0:poswhitespace[0]]
+            elif (poswhitespace == None and poscomma != None):
+                poscomma = poscomma.span()
+                output = output[0:poscomma[0]]
+            else:
+                output = None
     else:
         output = None
     return output
 
 def getIssue(input):
-    # extra 'functie' toegevoegd om te kijken naar getallen tussen haakjes
     pos = re.search('(?i)no\.',input)
     if (pos != None):
         pos = pos.span()
@@ -289,41 +269,47 @@ def getIssue(input):
 
 def getAuthor(input):
     ## author name is almost always in the front and ends with a : or with et al
-    pos = re.search('(?i)et al|:',input)
+    pos = re.search('(?i)et al',input)
     if (pos != None):
         output = input[0:pos.span()[1]].strip()
     else:
-        output = None
+        pos = re.search('(?i),|:',input)
+        if pos !=None:
+            output = input[0:pos.span()[1]-1].strip()
+        else:
+            output = None
     return output
 
 def getTitle(input):
-    ## authors section almost always ends in et al or :
-    output = None
-    pos = re.search('(?i)et al|:',input)
-    if (pos != None):
-        output = input[pos.span()[1]+1:].strip()
-        if (len(output) == 0):
-            output = None
+    ## find the first letter in the string, because we look at title as last so we have removed all other metadata information
+    pos = re.search('(?i)[a-z]',input)
+    if pos!=None:
+        input = input[pos.span()[0]:]
+        ## find comma
+        pos = re.search(',',input)
+        if pos!=None:
+            output = input[0:pos.span()[0]].strip()
         else:
-            ## check title section for 'title' or title,
-            if (output[0]=="'"):
-                pos = re.search("'",output[1:])
-                output = output[1:pos.span()[1]]
-            else:
-                pos = re.search(',',output)
-                if (pos != None):
-                    output = output[0:pos.span()[1]-1]
-                else:
-                    output = None
+            output=input.strip()
     else:
         output = None
     return output
 
 def getJournal(input):
-    return None
+    pos = re.search('(?i)journal', input)
+    output = None
+    if pos!=None:
+        input = input[pos.span()[0]:]
+        pos = re.search(',',input)
+        if pos != None:
+            output = input[0:pos.span()[0]].strip()
+        else:
+            output = None
+    else:
+        output = None
+    return output
 
-
-input = "Altschul et al. Basic Local Alignment Search Tool, J. Mol. Biol., 215, pp. 403-410 (1990)."
+input = "WILLIAMS D P ET AL:  DESIGN, SYNTHESIS AND EXPRESSION OF A HUMAN INTERLEUKIN-2 GENE INCORPORATING THE CODON USAGE BIAS FOUND IN HIGHLY EXPRESSED ESCHERICHIA COLI GENES, NUCLEIC ACIDS RESEARCH, OXFORD UNIVERSITY PRESS, SURREY, GB, Bd. 16, Nr. 22, 25. November 1988 (1988-11-25), Seiten 10453-10467, XP000007466, ISSN: 0305-1048"
 print(getPages(input))
 print(getXP(input))
 print(getISSN(input))
@@ -335,3 +321,4 @@ print(getAuthor(input))
 print(getYear(input))
 print(getMonth(input))
 print(getJournal(input))
+
