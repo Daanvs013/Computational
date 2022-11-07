@@ -75,8 +75,12 @@ while i <= df5['cluster_id'].max():                                             
     total_false_positive += false_positive
     i += 1
 
-
-print(score_cluster)                                                                        # print results
+# print results
+print(score_cluster)
+print(score_cluster['f1_measure'].max())
+print(list(score_cluster.loc[score_cluster['f1_measure'] == score_cluster['f1_measure'].max()]['cluster_id'])[0])
+print(score_cluster['f1_measure'].min())
+print(list(score_cluster.loc[score_cluster['f1_measure'] == score_cluster['f1_measure'].min()]['cluster_id'])[0]) 
 print(total_true_positive, total_false_negative, total_false_positive, '\n',
 score_cluster['precision'].mean(), score_cluster['recall'].mean(), score_cluster['f1_measure'].mean())
 
