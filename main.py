@@ -153,12 +153,9 @@ if __name__ == '__main__':
     cores = mp.cpu_count()
 
     ## retrieve dataset from the databse
-    data_set = 'Patstat'
+    data_set = 'Patstat_golden_set'
     sql_query = f'select * from {data_set}'
-    sample_size = pd.read_sql(f'select count(*) from {data_set}',conn).loc[0][0]
-    n = input("How many samples should we run? insert 'all' for the entire dataset")
-    if n != 'all':
-        sample_size = int(n)
+    sample_size = 1000
     df = pd.read_sql(sql_query,conn).head(sample_size)
     print(f'---- data set: {data_set}')
     print(f'---- Sample size: {sample_size}')
