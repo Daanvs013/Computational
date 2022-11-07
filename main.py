@@ -161,3 +161,6 @@ if __name__ == '__main__':
     print(f'---- Sample size: {sample_size}')
     ## start main function
     main(df)
+
+    
+################## after running this file, please run precision.py for the exercises on validation
