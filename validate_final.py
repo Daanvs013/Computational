@@ -75,7 +75,7 @@ while i <= df5['cluster_id'].max():                                             
     total_false_positive += false_positive
     i += 1
 
-# print results
+# print results for 'third end product'
 print(score_cluster)
 print(score_cluster['f1_measure'].max())
 print(list(score_cluster.loc[score_cluster['f1_measure'] == score_cluster['f1_measure'].max()]['cluster_id'])[0])
