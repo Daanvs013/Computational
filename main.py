@@ -163,4 +163,4 @@ if __name__ == '__main__':
     main(df)
 
     
-################## after running this file, please run precision.py for the exercises on validation
+################## after running this file, please run validate_final.py for the exercises on validation
