@@ -8,6 +8,8 @@ import re
  
 ## functions
 def cleanString(input):
+    #funtion to remove double white spaces from input string
+    #returns string with double white spaces replaced by single white space
     output = input
     pos = re.search('\s\s',input) ## returns a match if double space is found, else returns None
     while pos != None: 
@@ -16,6 +18,8 @@ def cleanString(input):
     return output
 
 def getYear(input):
+    #function to find the publication year in a string
+    #returns first four digit number between 1900 and 2022 included
     pos = re.findall("\d\d\d\d",input) ## find all numbers that have 4 digits 
     output = None
     if pos!=None: ## for each number check if it is in the allowed range
@@ -28,7 +32,9 @@ def getYear(input):
     return output
 
 def getMonth(input):
-    pos = re.search("(?i)january|januari",input)
+    #function to find the publication month in a string
+    #returns the number of the month found
+    pos = re.search("(?i)january|januari",input) #(?i) is used to treat capital and lowercase letters the same
     if (pos != None):
         output = 1
     else:
@@ -80,24 +86,26 @@ def getMonth(input):
     return output
 
 def getXP(input):
+    #function to find the XP number in a string
+    #returns the found XP number
     pos = re.search('(?i)xp',input)
     output = None 
-    while (pos != None):
+    while (pos != None): #we use a while loop, since 'xp' may also be present in for example the title
         pos = pos.span() ## returns tuple with start and end position of XP in the string
-        output = input[pos[0]+2:].strip()
-        output_copy = output
+        output = input[pos[0]+2:].strip() #output is now everything after 'xp'
+        output_copy = output #make a copy of output for later use
         ## XP-number might have an - or space or other interpunction between XP and number
         pos = re.search('\d', output) ##check where the first digit in the string is
         if (pos == None):
-            output=None
+            output=None #there are no numbers in the string --> so there is no xp number
             continue
         else:
             pos = pos.span()
             output = output[pos[0]:pos[0] + 9] ## xp number is 9 digits
 
-        output_splitted = re.split("(1|2|3|4|5|6|7|8|9|0)", output)
+        output_splitted = re.split("(1|2|3|4|5|6|7|8|9|0)", output) #we are now going to check whether each element of the found string is a number
         output_splitted = [x for x in output_splitted if x != '']
-        if len(output_splitted) >= 9:
+        if len(output_splitted) >= 9: #otherwise it cannot be the xp number
             counter = 1
             for i in range(len(output_splitted)):
                 number = output_splitted[i]
@@ -112,13 +120,15 @@ def getXP(input):
                     output = None
                     break
         else:
-            pos = re.search('(?i)xp',output_copy)
+            pos = re.search('(?i)xp',output_copy) #we now look for the next instance of 'xp' in the string and repeat the whole process
             input = output_copy
             output = None
 
     return output
 
 def getISSN(input):
+    #function to find the ISSN number in the string
+    #returns the ISSN number
     pos = re.search('(?i)issn|ISSN',input)
     if (pos == None):
         return None
@@ -134,7 +144,9 @@ def getISSN(input):
             output = output[pos[0]:pos[0] + 9] ## ISSN number is 8 characters
             return output
 
-def getISBN(input):  
+def getISBN(input):
+    #function to find ISBN number in a string
+    #returns ISBN number
     pos = re.search('(?i)isbn',input) ## returns tuple with start and end position of ISBN in the string
     if (pos == None):
         return None
@@ -151,6 +163,7 @@ def getISBN(input):
             return output
 
 def getDOI(input):
+    #function that returns DOI of a string
     ## doi format 2 digits point 4 digits
     pos = re.search('(?i)\d\d\.\d\d\d\d',input)
     if (pos == None):
@@ -162,6 +175,7 @@ def getDOI(input):
 
 
 def getPages(input):
+    #function that finds and returns the pagenumbers in a string
     pos = re.search('(?i)pages|bladzijde|seite|page|pp\.', input) ## returns tuple with start and end position of pages in the string 
     if (pos == None):
         return None
@@ -169,16 +183,16 @@ def getPages(input):
         pos = pos.span() 
         page_numbers = input[pos[1]+1:].strip()
         output = page_numbers
-        pos = re.search('\s',input) ## returns a match if double space is found, else returns None
+        pos = re.search('\s',input) ## returns a match if white space is found, else returns None (whitespaces are removed for later convenience
         while pos != None: 
             output = re.sub('\s','',output)
             pos = re.search('\s',output)
-        ## split on white space or comma for example: "pages: 100-110 word" or "pages: 100-110, word"
-        pos = re.search(",",output) ## returns tuple with start and end position of a single space in the string 
+        ## split on comma for example: "pages: 100-110, word"
+        pos = re.search(",",output) ## returns tuple with start and end position of a comma in the string 
         if (pos != None):
             pos = pos.span()
             page_numbers = output[0:pos[0]].strip()
-        elif re.search('(?i)[a-z]|\(', page_numbers) != None:
+        elif re.search('(?i)[a-z]|\(', page_numbers) != None: #if no comma is found, we look for the first letter or first bracket
             pos = re.search('(?i)[a-z]|\(', page_numbers).span()
             page_numbers = page_numbers[0:pos[0]].strip()
         else: ## pages numbers are the last characters in the string
