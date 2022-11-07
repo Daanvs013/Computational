@@ -4,7 +4,6 @@
 
 
 ##modules
-from re import L
 import pandas as pd
 from conn import conn
 import os
