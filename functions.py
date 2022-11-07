@@ -200,8 +200,8 @@ def getPages(input):
         return page_numbers
 
 def getVol(input):
-
-    ## first look if there is an vol or deel keyword in the string
+    #function that finds and returns the volume found in the string
+    ## first look if there is an 'vol' or 'deel' keyword in the string
     pos = re.search('(?i)vol|deel',input)
     if (pos != None):
         pos = pos.span()
@@ -235,7 +235,8 @@ def getVol(input):
     return output
 
 def getIssue(input):
-    pos = re.search('(?i)no\.|nr\.',input)
+    #function that finds and returns the issue in the string
+    pos = re.search('(?i)no\.|nr\.',input) #first we look for the words no. and nr.
     if (pos != None):
         pos = pos.span()
         output = input[pos[1]:].strip()
@@ -270,26 +271,29 @@ def getIssue(input):
             else:
                 output = None
         return output
+    #if the above search does not give any results, we look at numbers between brackets that could possibly indicate a volume
     first_bracket = input.find("(")+1
     second_bracket = input.find(")")
-    if second_bracket < 0:
+    if second_bracket < 0: #if no brackets are found, second_bracket takes value 0 and so there is no volume which we can reasonably find
         output = None
     else:
         check = input[input.find("(")+1:input.find(")")]
         if check != '':
             check_1 = int(input.index(")")-1)
             check_2 = int(input.index("(")+1)
-            if check_1 - check_2 < 2 and check.isnumeric():
+            if check_1 - check_2 < 2 and check.isnumeric(): #issue is at most 2 characters long
                 output = check
                 return output
             else:
-                output = getIssue(input[check_1 + 2:])
+                output = getIssue(input[check_1 + 2:]) #look for the next pair of brackets in the string
         else:
             output = None
     return output
 
 def getAuthor(input):
+    #function that finds and returns the name of the author
     ## author name is almost always in the front and ends with a : ,  or with et al
+    # we do not think it is reasonable to find the author when et al is not present in the string
     pos = re.search('(?i)et al',input)
     if (pos != None):
         output = input[0:pos.span()[1]].strip()
@@ -302,6 +306,7 @@ def getAuthor(input):
     return output
 
 def getTitle(input):
+    #function that finds and returns the (most likely) title of the string
     ## find the first letter in the string, because we look at title as last so we have removed all other metadata information
     pos = re.search('(?i)[a-z]',input)
     if pos!=None:
@@ -317,7 +322,8 @@ def getTitle(input):
     return output
 
 def getJournal(input):
-
+    #function that finds and returns the journal of a string
+    #again, we do not think it is reasonable to find the journal when there is not expression like journal in the string
     pos = re.search('(?i)journal|science', input)
     if pos!=None:
         input = input[pos.span()[0]:]
