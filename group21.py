@@ -120,7 +120,7 @@ def Q1g():
     a = 0
     b = 5
     ## generate the p values with step 0.01
-    p = np.arange(a,b,0.01)
+    p = np.arange(a,b,0.001)
     ## generate samples
     samples = generate([a],[b],len(p))
     y = []
