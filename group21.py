@@ -223,6 +223,7 @@ def Q1j(m:int,n:int,K:int,delta:int):
     ## calculate optimum wrt the given set p_delta
     opt = {"p":[],"avg_price":0}
 
+    ## check for every price vector if the avg_price is better than opt
     for i in p_delta:
         avg = average_price(i,n,K)
         if avg > opt['avg_price']:
@@ -230,7 +231,7 @@ def Q1j(m:int,n:int,K:int,delta:int):
             opt['avg_price'] = avg
         else:
             pass
-    
+    ## return best price vector and corresponding avg_price
     return opt
 
 """
