@@ -57,7 +57,7 @@ def Q1b():
         ## because we flipped the sign, we need to flip it back to obtain the correct func value at the optimal p
         plt.scatter(opt.get("x"), -1*opt.get("fun"))
     plt.show()
-Q1b()
+#Q1b()
 
 """
 Exercise 1c)
@@ -112,14 +112,14 @@ def Q1f():
     result = getOptSamples(a,b, samples)
     ## note to interpret: flip sign of result.get('fun'), because we minimized -f
     return result
-print(Q1f())
+#print(Q1f())
 """
 Exercise 1g)
 """
 def Q1g():
     a = 0
     b = 5
-    ## generate the p values with step 0.01
+    ## generate the p values with stepsize 0.001
     p = np.arange(a,b,0.001)
     ## generate samples
     samples = generate([a],[b],len(p))
@@ -139,7 +139,7 @@ def Q1g():
     ## because we flipped the sign, we need to flip it back to obtain the correct func value at the optimal p
     plt.scatter(opt.get("x"), -1*opt.get("fun"))
     plt.show()
-Q1g()
+#Q1g()
 
 """
 Exercise 1h)
@@ -175,7 +175,7 @@ def matching(p:list,v:list):
     total = weight[row,col].sum()
     ## output
     return row,col,total
-#"""
+"""
 p = [0.1,0.6]
 v = [[0.04872488080912729, 0.28910965978981684], [0.7209663468312298, 0.021616249915949792]]
 print(matching(p,v))
@@ -219,8 +219,19 @@ def Q1j(m:int,n:int,K:int,delta:int):
             pi = k[i]/delta
             p.append(pi)
         p_delta.append(p)
+
     ## calculate optimum wrt the given set p_delta
-    return None
+    opt = {"p":[],"avg_price":0}
+
+    for i in p_delta:
+        avg = average_price(i,n,K)
+        if avg > opt['avg_price']:
+            opt["p"] = i
+            opt['avg_price'] = avg
+        else:
+            pass
+    
+    return opt
 
 """
 Exercise 1k)
