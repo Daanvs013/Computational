@@ -148,7 +148,7 @@ Exercise 1h)
 def matching(p,V):
     for i in range(0,len(p)):
         for j in range(0,np.shape(V)[1]):
-            if p[i] > V[i][j]:
+            if p[i] >= V[i][j]:
                 V[i][j] = 0
             else:
                 V[i][j] = p[i]
