@@ -118,29 +118,29 @@ def Q1f():
 Exercise 1g)
 """
 def Q1g():
-    a = 0
-    b = 5
+    a = [0,0,1]
+    b = [1,2,2]
     ## generate the p values with stepsize 0.001
-    p = np.arange(a,b,0.001)
+    p = np.arange(0,5,0.001)
     ## generate samples
-    samples = generate([a],[b],len(p))
+    samples = generate(a,b,len(p))
     y = []
     ## calculate the corresponding revenue for each pi
     for i in p:
         y.append(estimate_revenue(i,samples))
     ## plot
-    plt.figure(f"Q1g: plot on [{a},{b}]")
+    plt.figure(f"Q1g: plot on [0,5]")
     plt.plot(p,y)
-    plt.xlim(a,b)
+    plt.xlim(0,5)
     plt.xlabel("p")
     plt.ylabel("Estimated Revenue")
-    plt.title(f"Estimated Revenue plot on [{a},{b}]")
+    plt.title(f"Estimated Revenue plot on [0,5]")
     ## determine optimal value for p
-    opt = getOptSamples([a],[b],samples)
+    opt = getOptSamples(a,b,samples)
     ## because we flipped the sign, we need to flip it back to obtain the correct func value at the optimal p
     plt.scatter(opt.get("x"), -1*opt.get("fun"))
     plt.show()
-#Q1g()
+Q1g()
 
 """
 Exercise 1h)
