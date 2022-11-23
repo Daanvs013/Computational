@@ -143,7 +143,7 @@ def Q1g():
 Q1g()
 
 """
-Exercise 1h)
+Exercise 1h) DEZE NOG VERANDEREN!!!
 """
 def matching(p,V):
     for i in range(0,len(p)):
