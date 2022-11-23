@@ -2,16 +2,17 @@
 """
 Group number: 21
 Members:
-    1. Daan Spanbroek
+    1. Daan Spanbroek 2056711
     2. Daan van Turnhout 2051976
-    3. Dico de Gier
-    4. Hendrik Verkaik
+    3. Dico de Gier 2058017
+    4. Hendrik Verkaik 2053998
 """
 
 ## modules
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import optimize
+import itertools as it
 np.random.seed(21)
 
 """
@@ -144,95 +145,47 @@ def Q1g():
 """
 Exercise 1h)
 """
-def matching(p:list,v:list):
-    p = np.array(p)
-    v = np.array(v) ## assume that buyer always has a value assigned to a item. vi >= 0 for all items
-    ## subtract pi from vi for all j buyers
-    weight = v-p
-    ## set all negative weights to zero
-    weight[weight<0] = 0
-    ## optimize
-    row_ind,col_ind = optimize.linear_sum_assignment(weight, maximize=True)
-    ## row contains buyers as index of the weight matrix
-    ## col contains the corresponding items as index of weight matrix
+def matching(p,V):
+    for i in range(0,len(p)):
+        for j in range(0,np.shape(V)[1]):
+            if p[i] > V[i][j]:
+                V[i][j] = 0
+            else:
+                V[i][j] = p[i]
 
-    ## create helper arrays that will hold the matchings after filtering out the non-positive weights
-    row = np.array([], dtype='int64')
-    col = np.array([], dtype='int64')
+    V = V*-1
+    row_ind, col_ind = optimize.linear_sum_assignment(V)
 
-    ## loop through the buyers
-    for it in range(0,len(row_ind)-1):
-        j = row_ind[it]
-        ## get the corresponding item according to the optimzer
-        i = col_ind[it]
-        ## get the corresponding weight
-        cost = weight[i,j] 
-        ## add the row,col indice to the helper arrays if the matching weight is positive (Vij > Pi for buyer j to buy item i)
-        if cost > 0:
-            row = np.append(row,i)
-            col = np.append(col,j)
-    ## calculate the total sum of prices
-    total = weight[row,col].sum()
-    ## output
-    return row,col,total
-"""
-p = [0.1,0.6]
-v = [[0.04872488080912729, 0.28910965978981684], [0.7209663468312298, 0.021616249915949792]]
-print(matching(p,v))
-#"""
+    value = V[row_ind,col_ind].sum()
+    value = value*-1
+    return [row_ind,col_ind,value]
 
 """
 Exercise 1i)
 """
-def average_price(p:list,n:int,K:int):
-    p = np.array(p)
-    m = len(p)
-    tot = 0
-    ## perform K iterations
-    for it in range(0,K):
-        ## generate value V matrix
-        v = []
-        ## for every buyer, generate values for m items
-        for j in range(0,n):
-            values = generate([0],[1],m)
-            v.append(values)
-        ## matching
-        row,col,total = matching(p,v)
-        tot += total
-    
-    ## calculate average
-    avg_price = tot/K
-    return avg_price
+def average(p,n,K):
+    counter = 0
+    total = 0
+    while counter < K:
+        np.random.seed(21)
+        m = len(p)
+        V = np.random.rand(m,n)
+        total += matching(p,V)[2]
+        counter += 1
+    return total/K
 
 """
 Exercise 1j)
 """
-def Q1j(m:int,n:int,K:int,delta:int):
-    ## generate ki
-    k = np.arange(0,delta+1,1)
-    p_delta = []
-    ## generate K times the vector p which contains m amount of prices
-    for j in range(0,K):
-        ## generate p
-        p = []
-        for i in range(0,m):
-            pi = k[i]/delta
-            p.append(pi)
-        p_delta.append(p)
-
-    ## calculate optimum wrt the given set p_delta
-    opt = {"p":[],"avg_price":0}
-
-    ## check for every price vector if the avg_price is better than opt
-    for i in p_delta:
-        avg = average_price(i,n,K)
-        if avg > opt['avg_price']:
-            opt["p"] = i
-            opt['avg_price'] = avg
-        else:
-            pass
-    ## return best price vector and corresponding avg_price
-    return opt
+def grid(m,n,delta,K):
+    vector = np.linspace(0,1,delta+1)
+    max = [0,0]
+    for x in it.product(vector,repeat=m):
+        y = np.array(x) #it.product returns a tuple
+        result = [average(y,n,K), y]
+        if result[0] > max[0]:
+            max = result
+    return "Max value {} is achieved at price vector {}".format(max[0], max[1])
 
 """
 Exercise 1k)
@@ -242,7 +195,7 @@ def Q1k():
     n = 3
     K = 100
     delta = 50
-    result = Q1j(m,n,K,delta)
+    result = grid(m,n,delta,K)
     print(result)
 Q1k()
 
