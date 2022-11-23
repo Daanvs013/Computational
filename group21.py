@@ -166,8 +166,8 @@ Exercise 1i)
 def average(p,n,K):
     counter = 0
     total = 0
+    np.random.seed(21)
     while counter < K:
-        np.random.seed(21)
         m = len(p)
         V = np.random.rand(m,n)
         total += matching(p,V)[2]
