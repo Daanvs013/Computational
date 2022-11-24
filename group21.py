@@ -146,7 +146,7 @@ Q1g()
 Exercise 1h)
 """
 def matching(p,V):
-    ## please see the report for an explanation of the output of this function
+    ## please see the report for a step-by-step guide through this function and a detailed explanation of the output
     for i in range(0,len(p)):
         for j in range(0,np.shape(V)[1]):
             if p[i] >= V[i][j]:
@@ -174,10 +174,10 @@ Exercise 1i)
 def average(p,n,K):
     counter = 0
     total = 0
-    np.random.seed(21)
+    np.random.seed(21) ##we again set the seed to 21 to make sure that we can accurately compare the values
     while counter < K:
         m = len(p)
-        V = np.random.rand(m,n)
+        V = np.random.rand(m,n) ##create random matrix with size mxn
         total += matching(p,V)[2]
         counter += 1
     return total/K
@@ -186,7 +186,7 @@ def average(p,n,K):
 Exercise 1j)
 """
 def grid(m,n,delta,K):
-    vector = np.linspace(0,1,delta+1)
+    vector = np.linspace(0,1,delta+1) ##all possible values of p_i
     max = [0,0]
     for x in it.product(vector,repeat=m):
         y = np.array(x) #it.product returns a tuple
