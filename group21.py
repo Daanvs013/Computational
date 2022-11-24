@@ -58,7 +58,7 @@ def Q1b():
         ## because we flipped the sign, we need to flip it back to obtain the correct func value at the optimal p
         plt.scatter(opt.get("x"), -1*opt.get("fun"))
     plt.show()
-#Q1b()
+Q1b()
 
 """
 Exercise 1c)
@@ -113,7 +113,7 @@ def Q1f():
     result = getOptSamples(a,b, samples)
     ## note to interpret: flip sign of result.get('fun'), because we minimized -f
     return result
-#print(Q1f())
+print(Q1f())
 """
 Exercise 1g)
 """
@@ -143,52 +143,30 @@ def Q1g():
 Q1g()
 
 """
-Exercise 1h) DEZE NOG VERANDEREN!!!
+Exercise 1h)
 """
-''' oude variant
 def matching(p,V):
+    ## please see the report for an explanation of the output of this function
     for i in range(0,len(p)):
         for j in range(0,np.shape(V)[1]):
-            if p[i] >= V[i][j]:
+            if p[i] > V[i][j]:
                 V[i][j] = 0
             else:
                 V[i][j] = p[i]
 
     V = V*-1
     row_ind, col_ind = optimize.linear_sum_assignment(V)
-
-    value = V[row_ind,col_ind].sum()
-    value = value*-1
-    return [row_ind,col_ind,value]
-'''
-def matching(p:list,V:list):
-    for i in range(0,len(p)):
-        for j in range(0,np.shape(V)[1]):
-            if p[i] >= V[i][j]:
-                V[i][j] = 0
-            else:
-                V[i][j] = p[i]
-    row_ind, col_ind = optimize.linear_sum_assignment(V, maximize=True)
-
-    ## create helper arrays that will hold the matchings after filtering out the non-positive weights
+    value = 0
     row = np.array([], dtype='int64')
     col = np.array([], dtype='int64')
-
-    ## loop through the buyers ( rows )
-    for it in range(0,len(row_ind)-1):
-        i = row_ind[it]
-        ## get the corresponding item ( colomn ) according to the optimzer
-        j = col_ind[i]
-        ## get the corresponding weight
-        cost = V[i,j] 
-        ## add the row,col indice to the helper arrays if the matching weight is greater than zero
-        if cost > 0:
+    for i in range(len(row_ind)):
+        if V[i][col_ind[i]] != 0:
             row = np.append(row,i)
-            col = np.append(col,j)
-    ## get the total value of the filtered matching
-    value = V[row,col].sum()
-    ## return matching and total value
-    return [row,col,value]
+            col = np.append(col,col_ind[i])
+            value += V[i][col_ind[i]]
+    
+    value = value*-1
+    return [row, col, value]
 
 """
 Exercise 1i)
@@ -203,9 +181,6 @@ def average(p,n,K):
         total += matching(p,V)[2]
         counter += 1
     return total/K
-p = np.array([5,4])
-v=  np.array([[4,7],[3,5]])
-print(matching(p,v))
 
 """
 Exercise 1j)
