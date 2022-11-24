@@ -149,7 +149,7 @@ def matching(p,V):
     ## please see the report for an explanation of the output of this function
     for i in range(0,len(p)):
         for j in range(0,np.shape(V)[1]):
-            if p[i] > V[i][j]:
+            if p[i] >= V[i][j]:
                 V[i][j] = 0
             else:
                 V[i][j] = p[i]
