@@ -13,12 +13,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import optimize
 import itertools as it
+
 np.random.seed(21)
 
 """
 Exercise 1a)
 """
 def revenue(p,a,b):
+    """returns expected revenue"""
     ## X is continuous random variable
     ## X~UNIF(a,b)
     cdf = lambda x: (x-a)/(b-a)
@@ -29,6 +31,7 @@ def revenue(p,a,b):
     return r
 
 def getOptP(a,b):
+    """returns optimized revenue"""
     ## max f = min -f
     ## we want to maximize, so flip sign of the function revenue()
     f = lambda p,a,b: -revenue(p,a,b)
@@ -40,6 +43,7 @@ def getOptP(a,b):
 Exercise 1b)
 """
 def Q1b():
+    """returns plots of expected revenue and the maximum for the values in list"""
     list = [(0,1),(10,20),(20,60),(40,100)]
     for pair in list:
         a = pair[0]
@@ -64,6 +68,7 @@ Q1b()
 Exercise 1c)
 """
 def generate(a:list,b:list,t:int):
+    """returns t samples"""
     ## check if a and b have the same length
     if len(a) == len(b):
         output = []
@@ -83,6 +88,7 @@ def generate(a:list,b:list,t:int):
 Exercise 1d)
 """
 def estimate_revenue(p,list):
+    """returns p times the fraction of numbers that are greater or equal than p"""
     ## if list is a sample from unif then this function represents the estimate for the revenue
     list = np.array(list)
     n = len(list)
@@ -93,6 +99,7 @@ def estimate_revenue(p,list):
 Exercise 1e)
 """
 def getOptSamples(a:list,b:list,t:list):
+    """returns optimized result of question 1d)"""
     ## max f = min -f
     ## we want to maximize, so flip sign of the function in (d)
     f = lambda p,t: -estimate_revenue(p,t)
@@ -118,6 +125,7 @@ print(Q1f())
 Exercise 1g)
 """
 def Q1g():
+    """returns plot of revenue with maximum"""" 
     a = [0,0,1]
     b = [1,2,2]
     ## generate the p values with stepsize 0.001
@@ -146,21 +154,23 @@ Q1g()
 Exercise 1h)
 """
 def matching(p,V):
+    """returns row indices and column indices of maximum matching, along with the value of the maximum matching"""
     ## please see the report for a step-by-step guide through this function and a detailed explanation of the output
     for i in range(0,len(p)):
         for j in range(0,np.shape(V)[1]):
-            if p[i] >= V[i][j]:
+            if p[i] >= V[i][j]: ##if price exceeds value, entry of the matrix should get value 0 in the matching
                 V[i][j] = 0
             else:
-                V[i][j] = p[i]
+                V[i][j] = p[i] ##otherwise, the entry of the matrix should get the value of the price in the matching
 
     V = V*-1
     row_ind, col_ind = optimize.linear_sum_assignment(V)
     value = 0
+    ##create arrays to store final matching
     row = np.array([], dtype='int64')
     col = np.array([], dtype='int64')
     for i in range(len(row_ind)):
-        if V[i][col_ind[i]] != 0:
+        if V[i][col_ind[i]] != 0: ##only entries with a value unequal to zero should appear in the final matching
             row = np.append(row,i)
             col = np.append(col,col_ind[i])
             value += V[i][col_ind[i]]
@@ -172,6 +182,7 @@ def matching(p,V):
 Exercise 1i)
 """
 def average(p,n,K):
+    """returns average value of the maximum matching with K runs"""
     counter = 0
     total = 0
     np.random.seed(21) ##we again set the seed to 21 to make sure that we can accurately compare the values
@@ -186,11 +197,12 @@ def average(p,n,K):
 Exercise 1j)
 """
 def grid(m,n,delta,K):
+    """returns maximum value and optimal price vector"""
     vector = np.linspace(0,1,delta+1) ##all possible values of p_i
     max = [0,0]
-    for x in it.product(vector,repeat=m):
+    for x in it.product(vector,repeat=m): ##will cover every possible combination of p
         y = np.array(x) #it.product returns a tuple
-        result = [average(y,n,K), y]
+        result = [average(y,n,K), y] ##for each possible vector of p, we apply the average function K times
         if result[0] > max[0]:
             max = result
     return "Max value {} is achieved at price vector {}".format(max[0], max[1])
