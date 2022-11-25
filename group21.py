@@ -125,7 +125,7 @@ print(Q1f())
 Exercise 1g)
 """
 def Q1g():
-    """returns plot of revenue with maximum"""" 
+    """returns plot of revenue with maximum""" 
     a = [0,0,1]
     b = [1,2,2]
     ## generate the p values with stepsize 0.001
