@@ -155,13 +155,42 @@ class BlackScholesOptionPrice():
 
         d1, d2 = self._d1_and_d2(current_stock_price, time_to_maturity)
         return np.exp(-self.r * time_to_maturity) * self.strike * norm.cdf(-d2) - current_stock_price * norm.cdf(-d1)
-
+    
+    def delta_put(self, current_stock_price, time_to_maturity):
+        """Calculates delta of European put option."""
+        
+        d1, _ = self._d1_and_d2(current_stock_price, time_to_maturity)
+        return - norm.cdf(- d1)
+                
     def price_call(self, current_stock_price, time_to_maturity):
         """Calculates price of European call option"""
 
         d1, d2 = self._d1_and_d2(current_stock_price, time_to_maturity)
         return current_stock_price * norm.cdf(d1) - np.exp(-self.r * time_to_maturity) * self.strike *  norm.cdf(d2)
     
+    def delta_call(self, current_stock_price, time_to_maturity):
+        """Calculates delta of European call option."""
+        
+        d1, _ = self._d1_and_d2(current_stock_price, time_to_maturity)
+        return norm.cdf(d1)
+    
+    def gamma(self,current_stock_price,sigma,time_to_maturity):
+        """Calculates gamma of European option."""
+        d1, _ = self._d1_and_d2(current_stock_price, time_to_maturity)
+        return (1/(current_stock_price*sigma*np.sqrt(time_to_maturity)))*norm.cdf(d1)
+    
+    def _vega(self, current_stock_price, time_to_maturity):
+        """Computes vega."""
+        
+        d1, _ = self._d1_and_d2(current_stock_price, time_to_maturity)
+        return current_stock_price * norm.pdf(d1) * np.sqrt(time_to_maturity)
+    
+    def vega_call(self, current_stock_price, time_to_maturity):
+        return self._vega(current_stock_price, time_to_maturity)
+
+    def vega_put(self, current_stock_price, time_to_maturity):
+        return self._vega(current_stock_price, time_to_maturity)  
+
 class NumericalProxyPDE:
     """Class implementing the algorithm that has been described above."""
 
@@ -210,8 +239,8 @@ class NumericalProxyPDE:
 
             self.G[i - 1, 1 : self.M] = np.transpose(spsolve(self.A, y))
 
-
 class SolvePDEBoundaryNumerically(NumericalProxyPDE):
+
     def __init__(
         self,
         Smax: float,
@@ -250,11 +279,72 @@ class SolvePDEBoundaryNumerically(NumericalProxyPDE):
             nearest_idx_stock_price
         ]  # If you directly want the element of array (array) nearest to the given number (num)
         time = self.t[nearest_idx_time]
+        """
+        
         print(
             f"The closest point to specified s on the grid is {stock_price} and the closest point to specified t is {time}"
-        )
+        )"""
         price = self.G[nearest_idx_time, nearest_idx_stock_price]
+        """
+        
         print(
             f"The (approximation to the) price of the option at t={time}, S_t={stock_price} is {price}"
-        )
+        )"""
         return price
+
+def approximate_vega_call_bump_reprice_osfd_noncommon(num_replications, T, sigma, r, K,S_0, h):
+
+    def aux(T, r, sigma):
+        S_T =  S_0 * np.exp((r - 0.5 * sigma ** 2) * T + sigma *  np.sqrt(T) * norm.rvs(size=num_replications))
+        option_price_prox = np.exp(-r * T) * np.mean(np.maximum(S_T - K, 0))
+        return option_price_prox
+    return (aux(T, r, sigma + h) - aux(T, r, sigma)) / h
+
+def writing_put_option_delta_hedge_discrete_time(K: float, T: float, S_0: float, mu: float, sigma: float,
+                                                 B_0: float, r: float, num_time_steps_per_unit_of_time: int,
+                                                num_puts: int
+                                                 ):
+
+    num_time_steps_total = int(T * num_time_steps_per_unit_of_time)
+    time_delta = T / num_time_steps_total
+    # intitialize variables:
+    phi = np.zeros(num_time_steps_total + 1)
+    psi = np.zeros(num_time_steps_total + 1)
+    phi[-1] = np.nan
+    psi[-1] = np.nan
+    price_puts = np.zeros(num_time_steps_total + 1)
+    S = np.zeros(num_time_steps_total + 1)
+    S[0] = S_0
+    B = np.zeros(num_time_steps_total + 1)
+    B[0] = B_0
+    total_portfolio_value = np.zeros(num_time_steps_total + 1)
+    put = BlackScholesOptionPrice(K, r, sigma)
+    time = np.linspace(0, T, num_time_steps_total + 1)
+    # determine initial positions:
+    put_price_initial = put.price_put(current_stock_price=S_0, time_to_maturity=T)
+    price_puts[0] = num_puts * put_price_initial
+    phi[0] = - num_puts * put.delta_put(current_stock_price=S_0, time_to_maturity=T) # make total portfolio delta-neutral
+    psi[0] = - (price_puts[0] + phi[0] * S[0]) / B[0]
+    total_portfolio_value[0] = price_puts[0] + phi[0] * S[0] + psi[0] * B[0] # 0 by construction
+    # iterate over discrete-time grid:
+    for k in range(1, num_time_steps_total + 1):
+        # new asset prices:
+        B[k] = B[k - 1] * np.exp(r * time_delta)
+        S[k] = S[k - 1] * np.exp((mu - 0.5 * sigma ** 2) * time_delta + sigma * np.sqrt(time_delta) * norm.rvs())
+        # current value of (S,B) portfolio from previous point-in-time (below we will rebalance):
+        value = phi[k - 1] * S[k] + psi[k - 1] * B[k]
+        # new value puts:
+        if time[k] == T:
+            price_puts[k] =  num_puts * np.maximum(K - S[k], 0)
+            total_portfolio_value[k] = price_puts[k] + value
+            break 
+        price_puts[k] = num_puts * put.price_put(current_stock_price=S[k], time_to_maturity=T - time[k])
+        # determine new position S for next interval (such that combination of (S, B)-portfolio and 
+        # puts is delta-neutral):
+        phi[k] =  - num_puts * put.delta_put(current_stock_price=S[k], time_to_maturity=T - time[k])
+        # determine new position B, such that there is no net cashflow in (S, B)-portfolio:
+        psi[k] = (value - phi[k] * S[k]) / B[k]
+        # mismatch between discrete-time delta-neutral, self-financing portfolio and price puts:
+        total_portfolio_value[k] = price_puts[k] + phi[k] * S[k] + psi[k] * B[k]
+    return time, S, B, phi, psi, price_puts, total_portfolio_value
+    
